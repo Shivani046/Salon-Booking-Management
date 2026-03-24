@@ -35,7 +35,14 @@ const res = await fetch("/api/customers/login", {
   }),
 });
 
-const data = await res.json();
+let data;
+
+try {
+  data = await res.json();
+} catch {
+  alert("Server error. Please try again.");
+  return;
+}
 
 if (!res.ok) {
   alert(data?.error ?? "Login failed");

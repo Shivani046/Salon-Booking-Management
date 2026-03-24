@@ -1,31 +1,31 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
+  try {
+    const body = await req.json();
 
-  const emailId = String(body?.emailId ?? "").trim();
-  const password = String(body?.password ?? "");
+    const emailId = String(body?.emailId ?? "").trim().toLowerCase();
+    const password = String(body?.password ?? "").trim();
 
-  if (!emailId || !password) {
-    return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    if (!emailId || !password) {
+      return Response.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    const user = await prisma.customer.findUnique({
+      where: { emailId },
+    });
+
+    if (!user) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.password !== password) {
+      return Response.json({ error: "Invalid password" }, { status: 401 });
+    }
+
+    return Response.json(user);
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    return Response.json({ error: "Server error" }, { status: 500 });
   }
-
-  const customer = await prisma.customer.findUnique({ where: { emailId } });
-  if (!customer) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
-  }
-
-  const ok = await bcrypt.compare(password, customer.password);
-  if (!ok) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
-  }
-
-  return NextResponse.json({
-    custId: customer.custId,
-    name: customer.name,
-    phoneNo: customer.phoneNo,
-    emailId: customer.emailId,
-  });
 }
