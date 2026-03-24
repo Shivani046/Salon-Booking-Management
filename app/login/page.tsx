@@ -91,7 +91,7 @@ router.push("/");
           {/* Header strip (beige) */}
           <div className="bg-[linear-gradient(180deg,#fff7ef_0%,#f9ebde_100%)] px-8 py-7 text-center md:px-10">
             <p className="text-[11px] font-semibold uppercase tracking-[0.45em] text-[#a24e5f]">
-              Client Access
+              
             </p>
             <h2 className="mt-3 text-[1.9rem] font-semibold tracking-[0.02em] md:text-[2.25rem]">
               Login Account
