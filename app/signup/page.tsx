@@ -78,7 +78,6 @@ try {
   setLoading(false);
 }
 
-}
 
 return (
   <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
@@ -164,3 +163,4 @@ return (
 
   </main>
 );
+}
