@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
@@ -8,7 +9,10 @@ export async function POST(req: Request) {
     const password = String(body?.password ?? "").trim();
 
     if (!emailId || !password) {
-      return Response.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Email and password required" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.customer.findUnique({
@@ -16,16 +20,33 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return Response.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
     }
 
     if (user.password !== password) {
-      return Response.json({ error: "Invalid password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid password" },
+        { status: 401 }
+      );
     }
 
-    return Response.json(user);
+    return NextResponse.json({
+      message: "Login successful",
+      custId: user.custId,
+      name: user.name,
+      emailId: user.emailId,
+      phoneNo: user.phoneNo,
+    });
+
   } catch (err) {
     console.error("LOGIN ERROR:", err);
-    return Response.json({ error: "Server error" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
