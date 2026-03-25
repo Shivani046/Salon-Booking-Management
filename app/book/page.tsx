@@ -43,9 +43,28 @@ const [services, setServices] = useState<ServiceRow[]>([]);
 const [staff, setStaff] = useState<StaffRow[]>([]);
 const [loading, setLoading] = useState(true);
 
+const [loggedIn, setLoggedIn] = useState(false);
+const [profileName, setProfileName] = useState("User");
+
 function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
 setForm((prev) => ({ ...prev, [key]: value }));
 }
+
+// AUTH STATE
+useEffect(() => {
+const v = localStorage.getItem("isLoggedIn");
+const n = localStorage.getItem("profileName");
+setLoggedIn(v === "true");
+setProfileName(n || "User");
+}, []);
+
+const initials = useMemo(() => {
+return profileName
+.split(" ")
+.map((n) => n[0])
+.join("")
+.toUpperCase();
+}, [profileName]);
 
 // FETCH DATA
 useEffect(() => {
@@ -57,11 +76,8 @@ fetch("/api/staff"),
 ]);
 
 
-    const svcData = await svcRes.json();
-    const staffData = await staffRes.json();
-
-    setServices(svcData || []);
-    setStaff(staffData || []);
+    setServices(await svcRes.json());
+    setStaff(await staffRes.json());
   } catch (err) {
     console.error(err);
   } finally {
@@ -72,40 +88,28 @@ fetch("/api/staff"),
 
 }, []);
 
-// CATEGORY LIST
 const categories = useMemo(() => {
 return Array.from(
 new Set(services.map((s) => s.category).filter(Boolean))
 ) as string[];
 }, [services]);
 
-// FILTERED SERVICES
 const filteredServices = useMemo(() => {
-if (!form.category) return [];
 return services.filter((s) => s.category === form.category);
 }, [services, form.category]);
 
-// SELECTED SERVICE
-const selectedService = useMemo(() => {
-return services.find((s) => s.serviceId === Number(form.serviceId)) || null;
-}, [services, form.serviceId]);
+const selectedService = services.find(
+(s) => s.serviceId === Number(form.serviceId)
+);
 
-// STAFF FILTER
-const staffOptions = useMemo(() => {
-return staff.filter((st) =>
+const staffOptions = staff.filter((st) =>
 (st.services ?? []).some(
 (s) => s.serviceId === Number(form.serviceId)
 )
 );
-}, [staff, form.serviceId]);
 
-// RESET SERVICE WHEN CATEGORY CHANGES
 useEffect(() => {
-setForm((prev) => ({
-...prev,
-serviceId: "",
-staffId: "any",
-}));
+setForm((p) => ({ ...p, serviceId: "", staffId: "any" }));
 }, [form.category]);
 
 function onSubmit(e: React.FormEvent) {
@@ -128,17 +132,43 @@ const params = new URLSearchParams({
 
 router.push(`/payment?${params.toString()}`);
 
-
 }
 
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
 
-  {/* HEADER */}
-  <header className="bg-[#cb7885] px-6 py-4 text-black">
-    <Link href="/" className="text-xl font-semibold">
-      ERAILE BEAUTY
-    </Link>
+  {/* NAVBAR */}
+  <header className="bg-[#cb7885] shadow-[0_6px_18px_rgba(0,0,0,0.12)]">
+    <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
+
+      <Link href="/" className="text-[1.4rem] font-semibold tracking-[0.05em]">
+        ERAILE BEAUTY
+      </Link>
+
+      <div className="hidden md:flex items-center gap-10 text-[0.85rem] uppercase tracking-[0.2em]">
+        <Link href="/">Home</Link>
+        <Link href="/services">Services</Link>
+        <Link href="/book">Book</Link>
+        <Link href="/contact">Contact</Link>
+      </div>
+
+      {!loggedIn ? (
+        <Link
+          href="/login"
+          className="rounded-full bg-white/80 px-5 py-2 text-xs font-semibold text-[#8f3c4e]"
+        >
+          Login
+        </Link>
+      ) : (
+        <button
+          onClick={() => router.push("/profile")}
+          className="h-11 w-11 rounded-full bg-[#f8edd9] flex items-center justify-center text-sm font-bold text-[#7a2f3f]"
+        >
+          {initials}
+        </button>
+      )}
+
+    </nav>
   </header>
 
   {/* TITLE */}
@@ -154,54 +184,52 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
     <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
 
       {/* PERSONAL CARD */}
-      <div className="rounded-2xl bg-white/60 border border-[#eadcc6] p-6 shadow-md">
-        <h2 className="text-sm uppercase tracking-widest text-[#a24e5f] font-semibold">
+      <div className="rounded-[24px] bg-white/70 border border-[#eadcc6] px-8 py-8 shadow-md max-w-[520px] w-full mx-auto">
+        <h2 className="text-xs uppercase tracking-[0.35em] text-[#a24e5f] text-center font-semibold">
           Personal Information
         </h2>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-8 space-y-6">
           <input
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
             placeholder="Full Name"
-            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#cb7885]"
+            className="w-full rounded-2xl border px-5 py-3"
           />
 
           <input
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
             placeholder="Phone"
-            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#cb7885]"
+            className="w-full rounded-2xl border px-5 py-3"
           />
         </div>
       </div>
 
       {/* BOOKING CARD */}
-      <div className="rounded-2xl bg-white/60 border border-[#eadcc6] p-6 shadow-md">
-        <h2 className="text-sm uppercase tracking-widest text-[#a24e5f] font-semibold">
+      <div className="rounded-[24px] bg-white/70 border border-[#eadcc6] px-8 py-8 shadow-md max-w-[520px] w-full mx-auto">
+        <h2 className="text-xs uppercase tracking-[0.35em] text-[#a24e5f] text-center font-semibold">
           Booking Details
         </h2>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-8 space-y-5">
 
-          {/* CATEGORY */}
           <select
             value={form.category}
             onChange={(e) => update("category", e.target.value)}
-            className="w-full rounded-xl border px-4 py-3"
+            className="w-full rounded-2xl border px-5 py-3"
           >
             <option value="">Select Category</option>
             {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c}>{c}</option>
             ))}
           </select>
 
-          {/* SERVICE */}
           <select
             value={form.serviceId}
             onChange={(e) => update("serviceId", e.target.value)}
             disabled={!form.category}
-            className="w-full rounded-xl border px-4 py-3"
+            className="w-full rounded-2xl border px-5 py-3"
           >
             <option value="">
               {!form.category ? "Select category first" : "Choose service"}
@@ -214,29 +242,27 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
             ))}
           </select>
 
-          {/* DATE + TIME */}
           <div className="grid grid-cols-2 gap-4">
             <input
               type="date"
               value={form.date}
               onChange={(e) => update("date", e.target.value)}
-              className="rounded-xl border px-4 py-3"
+              className="rounded-2xl border px-5 py-3"
             />
 
             <input
               value={form.time}
               onChange={(e) => update("time", e.target.value)}
               placeholder="Time"
-              className="rounded-xl border px-4 py-3"
+              className="rounded-2xl border px-5 py-3"
             />
           </div>
 
-          {/* STAFF */}
           <select
             value={form.staffId}
             onChange={(e) => update("staffId", e.target.value)}
             disabled={!form.serviceId}
-            className="w-full rounded-xl border px-4 py-3"
+            className="w-full rounded-2xl border px-5 py-3"
           >
             <option value="any">Any staff</option>
 
@@ -250,10 +276,10 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
       </div>
 
       {/* BUTTON */}
-      <div className="md:col-span-2 flex justify-center pt-4">
+      <div className="md:col-span-2 flex justify-center pt-6">
         <button
           type="submit"
-          className="bg-[#cb7885] text-white px-10 py-3 rounded-xl font-semibold shadow-md hover:bg-[#b96877]"
+          className="bg-[#cb7885] text-white px-10 py-3 rounded-xl font-semibold hover:bg-[#b96877]"
         >
           Continue
         </button>
@@ -267,3 +293,4 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
 
 );
 }
+
