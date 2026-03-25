@@ -41,8 +41,6 @@ staffId: "any",
 
 const [services, setServices] = useState<ServiceRow[]>([]);
 const [staff, setStaff] = useState<StaffRow[]>([]);
-const [loading, setLoading] = useState(true);
-
 const [loggedIn, setLoggedIn] = useState(false);
 const [profileName, setProfileName] = useState("User");
 
@@ -50,7 +48,6 @@ function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
 setForm((prev) => ({ ...prev, [key]: value }));
 }
 
-// AUTH STATE
 useEffect(() => {
 const v = localStorage.getItem("isLoggedIn");
 const n = localStorage.getItem("profileName");
@@ -66,23 +63,16 @@ return profileName
 .toUpperCase();
 }, [profileName]);
 
-// FETCH DATA
 useEffect(() => {
 (async () => {
-try {
 const [svcRes, staffRes] = await Promise.all([
 fetch("/api/services"),
 fetch("/api/staff"),
 ]);
 
 
-    setServices(await svcRes.json());
-    setStaff(await staffRes.json());
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
+  setServices(await svcRes.json());
+  setStaff(await staffRes.json());
 })();
 
 
@@ -132,179 +122,120 @@ const params = new URLSearchParams({
 
 router.push(`/payment?${params.toString()}`);
 
+
 }
+
+// ✅ TIME LOGIC (FIXED POSITION)
+const times = useMemo(() => {
+const slots: string[] = [];
+for (let hour = 10; hour <= 20; hour++) {
+slots.push(`${hour.toString().padStart(2, "0")}:00`);
+slots.push(`${hour.toString().padStart(2, "0")}:30`);
+}
+return slots;
+}, []);
 
 const today = new Date().toISOString().split("T")[0];
 
 const filteredTimes = useMemo(() => {
-  if (form.date !== today) return times;
+if (form.date !== today) return times;
 
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
 
-  return times.filter((t) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m > current;
-  });
+const now = new Date();
+const current = now.getHours() * 60 + now.getMinutes();
+
+return times.filter((t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m > current;
+});
+
+
 }, [form.date, times]);
 
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
 
   {/* NAVBAR */}
-  <header className="bg-[#cb7885] shadow-[0_6px_18px_rgba(0,0,0,0.12)]">
-    <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
-
-      <Link href="/" className="text-[1.4rem] font-semibold tracking-[0.05em]">
-        ERAILE BEAUTY
-      </Link>
-
-      <div className="hidden md:flex items-center gap-10 text-[0.85rem] uppercase tracking-[0.2em]">
-        <Link href="/">Home</Link>
-        <Link href="/services">Services</Link>
-        <Link href="/book">Book</Link>
-        <Link href="/contact">Contact</Link>
-      </div>
+  <header className="bg-[#cb7885] shadow">
+    <nav className="flex justify-between px-6 py-4">
+      <Link href="/">ERAILE BEAUTY</Link>
 
       {!loggedIn ? (
-        <Link
-          href="/login"
-          className="rounded-full bg-white/80 px-5 py-2 text-xs font-semibold text-[#8f3c4e]"
-        >
-          Login
-        </Link>
+        <Link href="/login">Login</Link>
       ) : (
-        <button
-          onClick={() => router.push("/profile")}
-          className="h-11 w-11 rounded-full bg-[#f8edd9] flex items-center justify-center text-sm font-bold text-[#7a2f3f]"
-        >
+        <button onClick={() => router.push("/profile")}>
           {initials}
         </button>
       )}
-
     </nav>
   </header>
 
-  {/* TITLE */}
-  <section className="text-center py-10">
-    <h1 className="text-4xl font-semibold">Book an Appointment</h1>
-    <p className="text-[#7b6e68] mt-2">
-      Fill in your details and select a service, date, and time.
-    </p>
-  </section>
-
   {/* FORM */}
-  <section className="max-w-6xl mx-auto px-6 pb-14">
-    <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
+  <section className="max-w-4xl mx-auto p-6">
+    <form onSubmit={onSubmit} className="space-y-6">
 
-      {/* PERSONAL CARD */}
-      <div className="rounded-[24px] bg-white/70 border border-[#eadcc6] px-8 py-8 shadow-md max-w-[520px] w-full mx-auto">
-        <h2 className="text-xs uppercase tracking-[0.35em] text-[#a24e5f] text-center font-semibold">
-          Personal Information
-        </h2>
+      <input
+        value={form.fullName}
+        onChange={(e) => update("fullName", e.target.value)}
+        placeholder="Full Name"
+        className="w-full border p-3"
+      />
 
-        <div className="mt-8 space-y-6">
-          <input
-            value={form.fullName}
-            onChange={(e) => update("fullName", e.target.value)}
-            placeholder="Full Name"
-            className="w-full rounded-2xl border px-5 py-3"
-          />
+      <input
+        value={form.phone}
+        onChange={(e) => update("phone", e.target.value)}
+        placeholder="Phone"
+        className="w-full border p-3"
+      />
 
-          <input
-            value={form.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="Phone"
-            className="w-full rounded-2xl border px-5 py-3"
-          />
-        </div>
-      </div>
+      <select
+        value={form.category}
+        onChange={(e) => update("category", e.target.value)}
+        className="w-full border p-3"
+      >
+        <option value="">Select Category</option>
+        {categories.map((c) => (
+          <option key={c}>{c}</option>
+        ))}
+      </select>
 
-      {/* BOOKING CARD */}
-      <div className="rounded-[24px] bg-white/70 border border-[#eadcc6] px-8 py-8 shadow-md max-w-[520px] w-full mx-auto">
-        <h2 className="text-xs uppercase tracking-[0.35em] text-[#a24e5f] text-center font-semibold">
-          Booking Details
-        </h2>
+      <select
+        value={form.serviceId}
+        onChange={(e) => update("serviceId", e.target.value)}
+        className="w-full border p-3"
+      >
+        <option value="">Select Service</option>
+        {filteredServices.map((s) => (
+          <option key={s.serviceId} value={s.serviceId}>
+            {s.type}
+          </option>
+        ))}
+      </select>
 
-        <div className="mt-8 space-y-5">
+      {/* DATE + TIME */}
+      <div className="grid grid-cols-2 gap-4">
+        <input
+          type="date"
+          value={form.date}
+          onChange={(e) => update("date", e.target.value)}
+          className="border p-3"
+        />
 
-          <select
-            value={form.category}
-            onChange={(e) => update("category", e.target.value)}
-            className="w-full rounded-2xl border px-5 py-3"
-          >
-            <option value="">Select Category</option>
-            {categories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-
-          <select
-            value={form.serviceId}
-            onChange={(e) => update("serviceId", e.target.value)}
-            disabled={!form.category}
-            className="w-full rounded-2xl border px-5 py-3"
-          >
-            <option value="">
-              {!form.category ? "Select category first" : "Choose service"}
-            </option>
-
-            {filteredServices.map((s) => (
-              <option key={s.serviceId} value={s.serviceId}>
-                {s.type}
-              </option>
-            ))}
-          </select>
-
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => update("date", e.target.value)}
-              className="rounded-2xl border px-5 py-3"
-            />
-
-            const today = new Date().toISOString().split("T")[0];
-
-const filteredTimes = useMemo(() => {
-  if (form.date !== today) return times;
-
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
-
-  return times.filter((t) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m > current;
-  });
-}, [form.date, times]);
-          </div>
-
-          <select
-            value={form.staffId}
-            onChange={(e) => update("staffId", e.target.value)}
-            disabled={!form.serviceId}
-            className="w-full rounded-2xl border px-5 py-3"
-          >
-            <option value="any">Any staff</option>
-
-            {staffOptions.map((st) => (
-              <option key={st.staffId} value={st.staffId}>
-                {st.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* BUTTON */}
-      <div className="md:col-span-2 flex justify-center pt-6">
-        <button
-          type="submit"
-          className="bg-[#cb7885] text-white px-10 py-3 rounded-xl font-semibold hover:bg-[#b96877]"
+        <select
+          value={form.time}
+          onChange={(e) => update("time", e.target.value)}
+          className="border p-3"
         >
-          Continue
-        </button>
+          <option value="">Select Time</option>
+          {filteredTimes.map((t) => (
+            <option key={t}>{t}</option>
+          ))}
+        </select>
       </div>
+
+      <button className="bg-[#cb7885] text-white px-6 py-3">
+        Continue
+      </button>
 
     </form>
   </section>
@@ -314,4 +245,5 @@ const filteredTimes = useMemo(() => {
 
 );
 }
+
 
