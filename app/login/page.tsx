@@ -12,6 +12,7 @@ function getInitials(name: string) {
 export default function LoginPage() {
   const router = useRouter();
 
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,15 +74,55 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
-      
-      {/* Navbar */}
-      <header className="bg-[#cb7885] text-black shadow-[0_8px_18px_rgba(98,46,56,0.14)]">
-        <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
-          <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
-            ERAILE BEAUTY
-          </Link>
-        </nav>
-      </header>
+      {/* NAVBAR */}
+<header className="bg-[#c27a82] shadow-[0_6px_14px_rgba(0,0,0,0.1)]">
+  <nav className="flex items-center justify-between px-8 py-4">
+
+    {/* LOGO */}
+    <Link href="/" className="text-lg font-semibold tracking-[0.08em]">
+      ERAILE BEAUTY
+    </Link>
+
+    {/* MENU */}
+    <div className="flex items-center gap-8 text-sm uppercase tracking-[0.18em]">
+
+      <Link href="/" className="hover:opacity-70">
+        Home
+      </Link>
+
+      <Link href="/services" className="hover:opacity-70">
+        Services
+      </Link>
+
+      <Link href="/book" className="hover:opacity-70">
+        Book
+      </Link>
+
+      <Link href="/contact" className="hover:opacity-70">
+        Contact
+      </Link>
+
+      {/* LOGIN / PROFILE */}
+      {!loggedIn ? (
+        <Link
+          href="/login"
+          className="ml-4 rounded-full bg-[#f4e6d8] px-5 py-2 text-xs font-semibold tracking-[0.15em]"
+        >
+          LOGIN
+        </Link>
+      ) : (
+        <div
+          onClick={() => router.push("/profile")}
+          className="ml-4 h-10 w-10 cursor-pointer rounded-full bg-[#f4e6d8] flex items-center justify-center font-semibold"
+        >
+          {initials}
+        </div>
+      )}
+
+    </div>
+
+  </nav>
+</header>
 
       {/* Login Card */}
       <section className="mx-auto flex max-w-7xl items-center justify-center px-6 py-10 md:min-h-[calc(100vh-76px)] md:px-10 md:py-14">
@@ -137,17 +178,28 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-white">Password</label>
-              <input
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError("");
-                }}
-                type="password"
-                className="w-full rounded-xl bg-white px-4 py-2.5 text-sm"
-              />
-            </div>
+  <label className="text-sm font-semibold text-white">Password</label>
+
+  <div className="relative">
+    <input
+      value={password}
+      onChange={(e) => {
+        setPassword(e.target.value);
+        setError("");
+      }}
+      type={showPassword ? "text" : "password"}
+      className="w-full rounded-xl bg-white px-4 py-2.5 pr-12 text-sm"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600"
+    >
+      {showPassword ? "Hide" : "Show"}
+    </button>
+  </div>
+</div>
 
             <button className="w-full rounded-xl bg-[#cb7885] py-3 text-white font-semibold">
               LOGIN
