@@ -8,8 +8,6 @@ export async function PUT(
   const { id } = await context.params;
   const body = await req.json();
 
-  console.log("Update staff:", id, body);
-
   return Response.json({ success: true });
 }
 
@@ -20,7 +18,5 @@ export async function DELETE(
 ) {
   const { id } = await context.params;
 
-  console.log("Delete staff:", id);
-
   return Response.json({ success: true });
-}
+}}
