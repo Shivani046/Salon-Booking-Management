@@ -21,24 +21,34 @@ export default function AdminPage() {
   const [services, setServices] = useState<any[]>([]);
 
   // 🔥 ANALYTICS
-  const analytics = useMemo(() => {
-    if (!appts.length) return null;
+ const analytics = useMemo(() => {
+  if (!appts.length) return null;
 
-    let totalRevenue = 0;
-    let status = { scheduled: 0, cancelled: 0 };
+  let totalRevenue = 0;
 
-    appts.forEach((a) => {
-      status[a.status] = (status[a.status] || 0) + 1;
-      totalRevenue += Number(a.amount?.replace(/[^\d]/g, "") || 0);
-    });
+  const status: Record<string, number> = {
+    scheduled: 0,
+    cancelled: 0,
+  };
 
-    return {
-      totalRevenue,
-      totalAppointments: appts.length,
-      avg: Math.round(totalRevenue / appts.length),
-      status,
-    };
-  }, [appts]);
+  appts.forEach((a: any) => {
+    status[a.status] = (status[a.status] || 0) + 1;
+
+    totalRevenue += Number(
+      a.amount?.replace(/[^\d]/g, "") || 0
+    );
+  });
+
+  return {
+    totalRevenue,
+    totalAppointments: appts.length,
+    avg:
+      appts.length > 0
+        ? Math.round(totalRevenue / appts.length)
+        : 0,
+    status,
+  };
+}, [appts]);
 
   useEffect(() => {
     if (!isAuthed) return;
