@@ -1,18 +1,25 @@
-export async function PUT(req: Request, { params }: any) {
+import { NextRequest } from "next/server";
+
+// UPDATE STAFF
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const body = await req.json();
 
-  const updated = await prisma.service.update({
-    where: { serviceId: Number(params.id) },
-    data: body,
-  });
+  // TODO: replace with DB update
+  console.log("Update staff:", params.id, body);
 
-  return Response.json(updated);
+  return Response.json({ success: true });
 }
 
-export async function DELETE(req: Request, { params }: any) {
-  await prisma.service.delete({
-    where: { serviceId: Number(params.id) },
-  });
+// DELETE STAFF
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // TODO: replace with DB delete
+  console.log("Delete staff:", params.id);
 
   return Response.json({ success: true });
 }
