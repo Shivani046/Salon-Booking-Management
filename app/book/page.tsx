@@ -26,11 +26,6 @@ name: string;
 services?: { serviceId: number }[];
 };
 
-function getInitials(name: string) {
-const parts = name.trim().split(/\s+/).slice(0, 2);
-return parts.map((p) => p[0].toUpperCase()).join("") || "U";
-}
-
 export default function BookPage() {
 const router = useRouter();
 
@@ -46,8 +41,7 @@ staffId: "any",
 
 const [services, setServices] = useState<ServiceRow[]>([]);
 const [staff, setStaff] = useState<StaffRow[]>([]);
-const [loadingServices, setLoadingServices] = useState(true);
-const [loadingStaff, setLoadingStaff] = useState(true);
+const [loading, setLoading] = useState(true);
 
 function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
 setForm((prev) => ({ ...prev, [key]: value }));
@@ -66,13 +60,12 @@ fetch("/api/staff"),
     const svcData = await svcRes.json();
     const staffData = await staffRes.json();
 
-    setServices(svcData);
-    setStaff(staffData);
+    setServices(svcData || []);
+    setStaff(staffData || []);
   } catch (err) {
     console.error(err);
   } finally {
-    setLoadingServices(false);
-    setLoadingStaff(false);
+    setLoading(false);
   }
 })();
 
@@ -94,15 +87,15 @@ return services.filter((s) => s.category === form.category);
 
 // SELECTED SERVICE
 const selectedService = useMemo(() => {
-const id = Number(form.serviceId);
-return services.find((s) => s.serviceId === id) || null;
-}, [form.serviceId, services]);
+return services.find((s) => s.serviceId === Number(form.serviceId)) || null;
+}, [services, form.serviceId]);
 
 // STAFF FILTER
 const staffOptions = useMemo(() => {
-const id = Number(form.serviceId);
 return staff.filter((st) =>
-(st.services ?? []).some((s) => s.serviceId === id)
+(st.services ?? []).some(
+(s) => s.serviceId === Number(form.serviceId)
+)
 );
 }, [staff, form.serviceId]);
 
@@ -142,7 +135,7 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
 
 
   {/* HEADER */}
-  <header className="bg-[#cb7885] text-black px-6 py-4">
+  <header className="bg-[#cb7885] px-6 py-4 text-black">
     <Link href="/" className="text-xl font-semibold">
       ERAILE BEAUTY
     </Link>
@@ -157,92 +150,114 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
   </section>
 
   {/* FORM */}
-  <section className="max-w-4xl mx-auto px-6 pb-12">
-    <form onSubmit={onSubmit} className="space-y-6">
+  <section className="max-w-6xl mx-auto px-6 pb-14">
+    <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
 
-      {/* PERSONAL */}
-      <input
-        value={form.fullName}
-        onChange={(e) => update("fullName", e.target.value)}
-        placeholder="Full Name"
-        className="w-full border p-2 rounded"
-      />
+      {/* PERSONAL CARD */}
+      <div className="rounded-2xl bg-white/60 border border-[#eadcc6] p-6 shadow-md">
+        <h2 className="text-sm uppercase tracking-widest text-[#a24e5f] font-semibold">
+          Personal Information
+        </h2>
 
-      <input
-        value={form.phone}
-        onChange={(e) => update("phone", e.target.value)}
-        placeholder="Phone"
-        className="w-full border p-2 rounded"
-      />
+        <div className="mt-6 space-y-4">
+          <input
+            value={form.fullName}
+            onChange={(e) => update("fullName", e.target.value)}
+            placeholder="Full Name"
+            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#cb7885]"
+          />
 
-      {/* CATEGORY */}
-      <select
-        value={form.category}
-        onChange={(e) => update("category", e.target.value)}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">Select Category</option>
-        {categories.map((c) => (
-          <option key={c} value={c}>{c}</option>
-        ))}
-      </select>
+          <input
+            value={form.phone}
+            onChange={(e) => update("phone", e.target.value)}
+            placeholder="Phone"
+            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#cb7885]"
+          />
+        </div>
+      </div>
 
-      {/* SERVICE */}
-      <select
-        value={form.serviceId}
-        onChange={(e) => update("serviceId", e.target.value)}
-        disabled={!form.category}
-        className="w-full border p-2 rounded"
-      >
-        <option value="">
-          {!form.category ? "Select category first" : "Choose service"}
-        </option>
+      {/* BOOKING CARD */}
+      <div className="rounded-2xl bg-white/60 border border-[#eadcc6] p-6 shadow-md">
+        <h2 className="text-sm uppercase tracking-widest text-[#a24e5f] font-semibold">
+          Booking Details
+        </h2>
 
-        {filteredServices.map((s) => (
-          <option key={s.serviceId} value={s.serviceId}>
-            {s.type}
-          </option>
-        ))}
-      </select>
+        <div className="mt-6 space-y-4">
 
-      {/* DATE */}
-      <input
-        type="date"
-        value={form.date}
-        onChange={(e) => update("date", e.target.value)}
-        className="w-full border p-2 rounded"
-      />
+          {/* CATEGORY */}
+          <select
+            value={form.category}
+            onChange={(e) => update("category", e.target.value)}
+            className="w-full rounded-xl border px-4 py-3"
+          >
+            <option value="">Select Category</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
 
-      {/* TIME */}
-      <input
-        value={form.time}
-        onChange={(e) => update("time", e.target.value)}
-        placeholder="Time"
-        className="w-full border p-2 rounded"
-      />
+          {/* SERVICE */}
+          <select
+            value={form.serviceId}
+            onChange={(e) => update("serviceId", e.target.value)}
+            disabled={!form.category}
+            className="w-full rounded-xl border px-4 py-3"
+          >
+            <option value="">
+              {!form.category ? "Select category first" : "Choose service"}
+            </option>
 
-      {/* STAFF */}
-      <select
-        value={form.staffId}
-        onChange={(e) => update("staffId", e.target.value)}
-        disabled={!form.serviceId}
-        className="w-full border p-2 rounded"
-      >
-        <option value="any">Any staff</option>
+            {filteredServices.map((s) => (
+              <option key={s.serviceId} value={s.serviceId}>
+                {s.type}
+              </option>
+            ))}
+          </select>
 
-        {staffOptions.map((st) => (
-          <option key={st.staffId} value={st.staffId}>
-            {st.name}
-          </option>
-        ))}
-      </select>
+          {/* DATE + TIME */}
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => update("date", e.target.value)}
+              className="rounded-xl border px-4 py-3"
+            />
 
-      <button
-        type="submit"
-        className="bg-[#cb7885] text-white px-6 py-2 rounded"
-      >
-        Continue
-      </button>
+            <input
+              value={form.time}
+              onChange={(e) => update("time", e.target.value)}
+              placeholder="Time"
+              className="rounded-xl border px-4 py-3"
+            />
+          </div>
+
+          {/* STAFF */}
+          <select
+            value={form.staffId}
+            onChange={(e) => update("staffId", e.target.value)}
+            disabled={!form.serviceId}
+            className="w-full rounded-xl border px-4 py-3"
+          >
+            <option value="any">Any staff</option>
+
+            {staffOptions.map((st) => (
+              <option key={st.staffId} value={st.staffId}>
+                {st.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* BUTTON */}
+      <div className="md:col-span-2 flex justify-center pt-4">
+        <button
+          type="submit"
+          className="bg-[#cb7885] text-white px-10 py-3 rounded-xl font-semibold shadow-md hover:bg-[#b96877]"
+        >
+          Continue
+        </button>
+      </div>
 
     </form>
   </section>
