@@ -133,15 +133,30 @@ router.push(`/payment?${params.toString()}`);
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
   {/* NAVBAR */}
-  <header className="bg-[#c27a82] shadow">
-    <nav className="flex items-center justify-between px-10 py-4">
+  {/* Navbar */}
+      <header className="bg-[#cb7885] text-black shadow-[0_8px_18px_rgba(98,46,56,0.14)]">
+        <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
+          <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
+            ERAILE BEAUTY
+          </Link>
 
-      <div className="flex gap-10 uppercase text-sm tracking-widest">
-        <Link href="/">Home</Link>
-        <Link href="/services">Services</Link>
-        <Link href="/book">Book</Link>
-        <Link href="/contact">Contact</Link>
-      </div>
+          <div className="hidden items-center gap-8 text-[0.92rem] font-medium uppercase tracking-[0.12em] md:flex">
+            <Link href="/" className="transition hover:opacity-75">
+              Home
+            </Link>
+            <Link href="/services" className="transition hover:opacity-75">
+              Services
+            </Link>
+            <Link href="/book" className="transition hover:opacity-75">
+              Book
+            </Link>
+            <Link
+              href="/contact"
+              className="rounded-full bg-white/80 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-[#8f3c4e] shadow-sm transition hover:bg-white"
+            >
+              Contact
+            </Link>
+
 
       {loggedIn && (
         <div
