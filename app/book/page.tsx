@@ -23,7 +23,6 @@ category: string | null;
 type StaffRow = {
 staffId: number;
 name: string;
-services?: { serviceId: number }[];
 };
 
 function getInitials(name: string) {
@@ -49,7 +48,9 @@ staffId: "any",
 });
 
 const [services, setServices] = useState<ServiceRow[]>([]);
-const [staff, setStaff] = useState<StaffRow[]>([]);
+const [staffOptions, setStaffOptions] = useState<StaffRow[]>([]);
+const [loadingStaff, setLoadingStaff] = useState(false);
+
 const [profileName, setProfileName] = useState("User");
 const [loggedIn, setLoggedIn] = useState(false);
 
@@ -57,6 +58,7 @@ function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
 setForm((prev) => ({ ...prev, [key]: value }));
 }
 
+// Navbar state
 useEffect(() => {
 const n = localStorage.getItem("profileName");
 const l = localStorage.getItem("isLoggedIn");
@@ -66,40 +68,59 @@ setLoggedIn(l === "true");
 
 const initials = useMemo(() => getInitials(profileName), [profileName]);
 
+// Fetch services
 useEffect(() => {
 (async () => {
-const [svcRes, staffRes] = await Promise.all([
-fetch("/api/services"),
-fetch("/api/staff"),
-]);
+const res = await fetch("/api/services");
+const data = await res.json();
+setServices(data);
+})();
+}, []);
+
+// Fetch staff based on service
+useEffect(() => {
+if (!form.serviceId) {
+setStaffOptions([]);
+return;
+}
 
 
-  setServices(await svcRes.json());
-  setStaff(await staffRes.json());
+(async () => {
+  try {
+    setLoadingStaff(true);
+
+    const res = await fetch(
+      `/api/staff?serviceId=${form.serviceId}`
+    );
+    const data = await res.json();
+
+    setStaffOptions(data);
+  } finally {
+    setLoadingStaff(false);
+  }
 })();
 
 
-}, []);
+}, [form.serviceId]);
 
+// Reset staff when service changes
+useEffect(() => {
+setForm((prev) => ({ ...prev, staffId: "any" }));
+}, [form.serviceId]);
+
+// Categories
 const categories = useMemo(() => {
 return Array.from(
 new Set(services.map((s) => s.category).filter(Boolean))
 ) as string[];
 }, [services]);
 
+// Filter services by category
 const filteredServices = useMemo(() => {
 return services.filter((s) => s.category === form.category);
 }, [services, form.category]);
 
-const staffOptions = useMemo(() => {
-return staff.filter((st) =>
-(st.services ?? []).some(
-(s) => s.serviceId === Number(form.serviceId)
-)
-);
-}, [staff, form.serviceId]);
-
-// 24h time slots
+// 24h times
 const times = useMemo(() => {
 const arr: string[] = [];
 for (let h = 10; h <= 20; h++) {
@@ -114,7 +135,7 @@ e.preventDefault();
 
 
 if (!form.fullName || !form.phone || !form.serviceId) {
-  alert("Fill required fields");
+  alert("Please fill all required fields");
   return;
 }
 
@@ -124,48 +145,50 @@ const params = new URLSearchParams({
   serviceId: form.serviceId,
   date: form.date,
   time: form.time,
+  staffId: form.staffId,
 });
 
 router.push(`/payment?${params.toString()}`);
+
 
 }
 
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
- <header className="bg-[#c27a82] shadow-[0_6px_14px_rgba(0,0,0,0.1)]">
-  <nav className="flex items-center justify-between px-8 py-4">
+  {/* NAVBAR */}
+  <header className="bg-[#c27a82] shadow-md">
+    <nav className="flex items-center justify-between px-8 py-4">
 
-    <Link href="/" className="text-lg font-semibold tracking-[0.08em]">
-      ERAILE BEAUTY
-    </Link>
+      <Link href="/" className="text-lg font-semibold tracking-[0.08em]">
+        ERAILE BEAUTY
+      </Link>
 
-    <div className="flex items-center gap-8 text-sm uppercase tracking-[0.18em]">
+      <div className="flex items-center gap-8 text-sm uppercase tracking-[0.18em]">
+        <Link href="/">Home</Link>
+        <Link href="/services">Services</Link>
+        <Link href="/book">Book</Link>
+        <Link href="/contact">Contact</Link>
 
-      <Link href="/" className="hover:opacity-70">Home</Link>
-      <Link href="/services" className="hover:opacity-70">Services</Link>
-      <Link href="/book" className="hover:opacity-70">Book</Link>
-      <Link href="/contact" className="hover:opacity-70">Contact</Link>
+        {!loggedIn ? (
+          <Link
+            href="/login"
+            className="ml-4 rounded-full bg-[#f4e6d8] px-5 py-2 text-xs font-semibold"
+          >
+            LOGIN
+          </Link>
+        ) : (
+          <div
+            onClick={() => router.push("/profile")}
+            className="ml-4 h-10 w-10 cursor-pointer rounded-full bg-[#f4e6d8] flex items-center justify-center font-semibold"
+          >
+            {initials}
+          </div>
+        )}
+      </div>
 
-      {!loggedIn ? (
-        <Link
-          href="/login"
-          className="ml-4 rounded-full bg-[#f4e6d8] px-5 py-2 text-xs font-semibold tracking-[0.15em]"
-        >
-          LOGIN
-        </Link>
-      ) : (
-        <div
-          onClick={() => router.push("/profile")}
-          className="ml-4 h-10 w-10 cursor-pointer rounded-full bg-[#f4e6d8] flex items-center justify-center font-semibold"
-        >
-          {initials}
-        </div>
-      )}
+    </nav>
+  </header>
 
-    </div>
-
-  </nav>
-</header>
   {/* TITLE */}
   <section className="text-center pt-12">
     <h1 className="text-5xl font-semibold">Book an Appointment</h1>
@@ -175,8 +198,9 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
     <div className="mt-6 h-px bg-[#cdbfac] max-w-4xl mx-auto" />
   </section>
 
-  {/* CARDS */}
+  {/* FORM */}
   <section className="max-w-6xl mx-auto mt-12 px-6">
+
     <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-10">
 
       {/* PERSONAL CARD */}
@@ -231,6 +255,7 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
             <option value="">
               {form.category ? "Choose service" : "Select category first"}
             </option>
+
             {filteredServices.map((s) => (
               <option key={s.serviceId} value={s.serviceId}>
                 {s.type}
@@ -240,6 +265,7 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
 
           {/* DATE + TIME */}
           <div className="grid grid-cols-2 gap-4">
+
             <input
               type="date"
               value={form.date}
@@ -253,21 +279,33 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
               className="rounded-xl border px-4 py-3"
             >
               <option value="">Select Time</option>
+
               {times.map((t) => (
-                <option key={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
+
           </div>
 
           {/* STAFF */}
           <select
             value={form.staffId}
             onChange={(e) => update("staffId", e.target.value)}
-            className="w-full rounded-xl border px-4 py-3"
+            disabled={!form.serviceId || loadingStaff}
+            className="w-full rounded-xl border px-4 py-3 disabled:opacity-60"
           >
-            <option value="any">Any staff</option>
+            <option value="any">
+              {!form.serviceId
+                ? "Select service first"
+                : loadingStaff
+                ? "Loading staff..."
+                : "Any staff"}
+            </option>
+
             {staffOptions.map((st) => (
-              <option key={st.staffId} value={st.staffId}>
+              <option key={st.staffId} value={String(st.staffId)}>
                 {st.name}
               </option>
             ))}
@@ -287,6 +325,7 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
         Continue
       </button>
     </div>
+
   </section>
 
 </main>
@@ -294,3 +333,4 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
 
 );
 }
+
