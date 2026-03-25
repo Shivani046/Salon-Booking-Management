@@ -133,7 +133,6 @@ router.push(`/payment?${params.toString()}`);
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
   {/* NAVBAR */}
-  {/* Navbar */}
       <header className="bg-[#cb7885] text-black shadow-[0_8px_18px_rgba(98,46,56,0.14)]">
         <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
           <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
@@ -156,7 +155,6 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
             >
               Contact
             </Link>
-
 
       {loggedIn && (
         <div
