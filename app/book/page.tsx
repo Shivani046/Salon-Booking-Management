@@ -134,6 +134,20 @@ router.push(`/payment?${params.toString()}`);
 
 }
 
+const today = new Date().toISOString().split("T")[0];
+
+const filteredTimes = useMemo(() => {
+  if (form.date !== today) return times;
+
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+
+  return times.filter((t) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m > current;
+  });
+}, [form.date, times]);
+
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
 
@@ -250,12 +264,19 @@ return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ff
               className="rounded-2xl border px-5 py-3"
             />
 
-            <input
-              value={form.time}
-              onChange={(e) => update("time", e.target.value)}
-              placeholder="Time"
-              className="rounded-2xl border px-5 py-3"
-            />
+            const today = new Date().toISOString().split("T")[0];
+
+const filteredTimes = useMemo(() => {
+  if (form.date !== today) return times;
+
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+
+  return times.filter((t) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m > current;
+  });
+}, [form.date, times]);
           </div>
 
           <select
