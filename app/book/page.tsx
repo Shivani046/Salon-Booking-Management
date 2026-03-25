@@ -132,41 +132,40 @@ router.push(`/payment?${params.toString()}`);
 
 return ( <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
 
-  {/* NAVBAR */}
-      <header className="bg-[#cb7885] text-black shadow-[0_8px_18px_rgba(98,46,56,0.14)]">
-        <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
-          <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
-            ERAILE BEAUTY
-          </Link>
+ <header className="bg-[#c27a82] shadow-[0_6px_14px_rgba(0,0,0,0.1)]">
+  <nav className="flex items-center justify-between px-8 py-4">
 
-          <div className="hidden items-center gap-8 text-[0.92rem] font-medium uppercase tracking-[0.12em] md:flex">
-            <Link href="/" className="transition hover:opacity-75">
-              Home
-            </Link>
-            <Link href="/services" className="transition hover:opacity-75">
-              Services
-            </Link>
-            <Link href="/book" className="transition hover:opacity-75">
-              Book
-            </Link>
-            <Link
-              href="/contact"
-              className="rounded-full bg-white/80 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-[#8f3c4e] shadow-sm transition hover:bg-white"
-            >
-              Contact
-            </Link>
+    <Link href="/" className="text-lg font-semibold tracking-[0.08em]">
+      ERAILE BEAUTY
+    </Link>
 
-      {loggedIn && (
+    <div className="flex items-center gap-8 text-sm uppercase tracking-[0.18em]">
+
+      <Link href="/" className="hover:opacity-70">Home</Link>
+      <Link href="/services" className="hover:opacity-70">Services</Link>
+      <Link href="/book" className="hover:opacity-70">Book</Link>
+      <Link href="/contact" className="hover:opacity-70">Contact</Link>
+
+      {!loggedIn ? (
+        <Link
+          href="/login"
+          className="ml-4 rounded-full bg-[#f4e6d8] px-5 py-2 text-xs font-semibold tracking-[0.15em]"
+        >
+          LOGIN
+        </Link>
+      ) : (
         <div
           onClick={() => router.push("/profile")}
-          className="h-10 w-10 rounded-full bg-[#f4e6d8] flex items-center justify-center font-semibold cursor-pointer"
+          className="ml-4 h-10 w-10 cursor-pointer rounded-full bg-[#f4e6d8] flex items-center justify-center font-semibold"
         >
           {initials}
         </div>
       )}
-    </nav>
-  </header>
 
+    </div>
+
+  </nav>
+</header>
   {/* TITLE */}
   <section className="text-center pt-12">
     <h1 className="text-5xl font-semibold">Book an Appointment</h1>
