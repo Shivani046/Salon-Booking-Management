@@ -12,12 +12,19 @@ function getInitials(name: string) {
 export default function LoginPage() {
   const router = useRouter();
 
+  // ✅ ADD THESE LINES
+ const [loggedIn, setLoggedIn] = useState(() => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("isLoggedIn") === "true";
+  }
+  return false;
+});
+
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  
   const initials = useMemo(() => getInitials(fullName), [fullName]);
 
   async function onSubmit(e: React.FormEvent) {
