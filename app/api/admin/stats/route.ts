@@ -1,35 +1,41 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { isSameDay } from "date-fns";
 
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
+// Define a type for appointments
+type Appointment = {
+  appDate: Date;
+  amount: number | null;
+};
 
-function amountToNumber(amount: string | null) {
-  if (!amount) return 0;
-  // converts "1300/-" or "₹1300" to 1300
-  const n = Number(String(amount).replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
-    const today = new Date();
-
-    const appointments = await prisma.appointment.findMany({
-      where: { status: { not: "cancelled" } },
-      select: { appDate: true, amount: true, status: true },
+    const appointments: Appointment[] = await prisma.appointment.findMany({
+      orderBy: { appDate: "desc" },
+      select: { appDate: true, amount: true },
     });
 
-    const todays = appointments.filter((a) => isSameDay(new Date(a.appDate), today));
+    const today = new Date();
+
+    const todays = appointments.filter((a: Appointment) =>
+      isSameDay(new Date(a.appDate), today)
+    );
     const todaysAppointments = todays.length;
 
-    const todaysRevenue = todays.reduce((sum, a) => sum + amountToNumber(a.amount), 0);
+    const todaysRevenue = todays.reduce(
+      (sum: number, a: Appointment) => sum + amountToNumber(a.amount),
+      0
+    );
 
-    const activeStaff = await prisma.staff.count();
-
-    return NextResponse.json({ todaysAppointments, todaysRevenue, activeStaff });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Failed to compute stats" }, { status: 500 });
+    return NextResponse.json({ todaysAppointments, todaysRevenue });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }
+
+function amountToNumber(amount: number | null): number {
+  return amount ?? 0;
+}
+
