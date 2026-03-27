@@ -1,22 +1,45 @@
-import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
-// UPDATE STAFF
+/* ✅ UPDATE STAFF */
 export async function PUT(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
-  const body = await req.json();
+  try {
+    const { name } = await req.json();
 
-  return Response.json({ success: true });
+    const updated = await prisma.staff.update({
+      where: { staffId: Number(params.id) },
+      data: { name },
+    });
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    console.error("UPDATE STAFF ERROR:", err);
+    return NextResponse.json(
+      { error: "Failed to update staff" },
+      { status: 500 }
+    );
+  }
 }
 
-// DELETE STAFF
+/* ✅ DELETE STAFF */
 export async function DELETE(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  try {
+    await prisma.staff.delete({
+      where: { staffId: Number(params.id) },
+    });
 
-  return Response.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("DELETE STAFF ERROR:", err);
+    return NextResponse.json(
+      { error: "Failed to delete staff" },
+      { status: 500 }
+    );
+  }
 }

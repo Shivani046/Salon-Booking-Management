@@ -1,0 +1,28 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: Request) {
+  try {
+    const { phone, password } = await req.json();
+
+    // check customer
+    const user = await prisma.customer.findFirst({
+      where: {
+        phoneNo: phone,
+        password: password,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    return NextResponse.json({
+      name: user.name,
+      role: user.role, // IMPORTANT
+    });
+
+  } catch (err) {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}

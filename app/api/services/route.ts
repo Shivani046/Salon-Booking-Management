@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// GET all appointments
 export async function GET() {
-  const services = await prisma.service.findMany({
-    orderBy: { type: "asc" },
-    select: { serviceId: true, type: true, category: true },
-  });
+  try {
+    const appointments = await prisma.appointment.findMany({
+      orderBy: { appDate: "desc" },
+      include: {
+        customer: true,
+      },
+    });
 
-  return NextResponse.json(services);
+    return NextResponse.json(appointments);
+  } catch (err) {
+    console.error("GET APPOINTMENTS ERROR:", err);
+    return NextResponse.json([], { status: 500 });
+  }
 }

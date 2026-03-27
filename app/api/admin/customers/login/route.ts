@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +8,6 @@ export async function POST(req: Request) {
     const emailId = String(body?.emailId ?? "").trim().toLowerCase();
     const password = String(body?.password ?? "").trim();
 
-    // Validate input
     if (!emailId || !password) {
       return NextResponse.json(
         { error: "Email and password required" },
@@ -17,7 +15,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find user
     const user = await prisma.customer.findUnique({
       where: { emailId },
     });
@@ -29,24 +26,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // Compare password (bcrypt)
-    const isValid = await bcrypt.compare(password, user.password);
-
-    if (!isValid) {
+    // 🔐 simple password check (no bcrypt here)
+    if (user.password !== password) {
       return NextResponse.json(
         { error: "Invalid password" },
         { status: 401 }
       );
     }
 
-    // Success
+    // ✅ IMPORTANT: send custId
     return NextResponse.json({
       message: "Login successful",
       custId: user.custId,
       name: user.name,
       emailId: user.emailId,
       phoneNo: user.phoneNo,
-      role: user.role, // useful for admin redirect
     });
 
   } catch (err) {

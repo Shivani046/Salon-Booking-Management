@@ -9,18 +9,19 @@ type BookingForm = {
   phone: string;
   category: string;
   serviceId: string;
+  staffId: string;
   date: string;
   time: string;
-  staffId: string;
 };
 
-type ServiceRow = {
+type Service = {
   serviceId: number;
   type: string;
-  category: string | null;
+  category: string;
+  price: number;
 };
 
-type StaffRow = {
+type Staff = {
   staffId: number;
   name: string;
 };
@@ -42,100 +43,82 @@ export default function BookPage() {
     phone: "",
     category: "",
     serviceId: "",
+    staffId: "any",
     date: "",
     time: "",
-    staffId: "any",
   });
 
-  const [services, setServices] = useState<ServiceRow[]>([]);
-  const [staffOptions, setStaffOptions] = useState<StaffRow[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [profileName, setProfileName] = useState("User");
   const [loggedIn, setLoggedIn] = useState(false);
 
-  function update<K extends keyof BookingForm>(
-    key: K,
-    value: BookingForm[K]
-  ) {
+  function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setErrorMessage(""); // clear errors when user changes input
   }
 
-  // Navbar state
+  const isValid =
+    form.fullName.trim() &&
+    form.phone.trim() &&
+    form.category &&
+    form.serviceId &&
+    form.date &&
+    form.time;
+
   useEffect(() => {
-    const n = localStorage.getItem("profileName");
-    const l = localStorage.getItem("isLoggedIn");
-    setProfileName(n || "User");
-    setLoggedIn(l === "true");
+    setProfileName(localStorage.getItem("profileName") || "User");
+    setLoggedIn(localStorage.getItem("isLoggedIn") === "true");
   }, []);
 
   const initials = useMemo(() => getInitials(profileName), [profileName]);
 
-  // Fetch services
+  // ---------------- SERVICES ----------------
   useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/services");
-      const data = await res.json();
-      setServices(data);
-    })();
+    fetch("/api/services")
+      .then((res) => res.json())
+      .then(setServices)
+      .catch((err) => console.error("Service fetch error:", err));
   }, []);
 
-  // Reset service + staff when category changes
-  useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      serviceId: "",
-      staffId: "any",
-    }));
-  }, [form.category]);
-
-  // Fetch staff based on selected service
+  // ---------------- STAFF ----------------
   useEffect(() => {
     if (!form.serviceId) {
-      setStaffOptions([]);
+      setStaffList([]);
       return;
     }
 
-    (async () => {
-      try {
-        setLoadingStaff(true);
+    setLoadingStaff(true);
 
-        const res = await fetch(
-          `/api/staff?serviceId=${Number(form.serviceId)}`
-        );
-
-        const data = await res.json();
-        setStaffOptions(data);
-      } catch (err) {
-        console.error("Error fetching staff:", err);
-      } finally {
-        setLoadingStaff(false);
-      }
-    })();
+    fetch(`/api/staff?serviceId=${Number(form.serviceId)}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to fetch staff");
+        const text = await res.text();
+        return text ? JSON.parse(text) : [];
+      })
+      .then(setStaffList)
+      .catch((err) => {
+        console.error("Staff fetch error:", err);
+        setStaffList([]);
+      })
+      .finally(() => setLoadingStaff(false));
   }, [form.serviceId]);
 
-  // Categories
+  // ---------------- CATEGORY ----------------
   const categories = useMemo(() => {
-    return Array.from(
-      new Set(
-        services
-          .map((s) => s.category)
-          .filter(Boolean)
-          .map((c) => c!.toLowerCase())
-      )
-    );
+    return Array.from(new Set(services.map((s) => s.category).filter(Boolean)));
   }, [services]);
 
-  // Filter services by category
+  // ---------------- FILTER SERVICES ----------------
   const filteredServices = useMemo(() => {
-    return services.filter(
-      (s) =>
-        s.category &&
-        s.category.toLowerCase() === form.category.toLowerCase()
-    );
+    if (!form.category) return [];
+    return services.filter((s) => s.category === form.category);
   }, [services, form.category]);
 
-  // Time slots
+  // ---------------- TIME ----------------
   const times = useMemo(() => {
     const arr: string[] = [];
     for (let h = 10; h <= 20; h++) {
@@ -145,37 +128,48 @@ export default function BookPage() {
     return arr;
   }, []);
 
+  // ---------------- SUBMIT ----------------
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!form.fullName || !form.phone || !form.serviceId) {
-      alert("Please fill all required fields");
+    if (!isValid) {
+      setErrorMessage("Please fill all required fields.");
       return;
     }
+
+    const service = services.find(
+      (s) => String(s.serviceId) === form.serviceId
+    );
+
+    const staff =
+      form.staffId === "any"
+        ? "ANY"
+        : staffList.find((s) => String(s.staffId) === form.staffId)?.name || "ANY";
 
     const params = new URLSearchParams({
       fullName: form.fullName,
       phone: form.phone,
-      serviceId: form.serviceId,
+      service: service?.type || "",
+      staff,
       date: form.date,
       time: form.time,
-      staffId: form.staffId,
+      total: String(service?.price || 0),
     });
 
     router.push(`/payment?${params.toString()}`);
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
-      
+    <main className="min-h-screen bg-[#f7ecd8] text-[#23181a]">
+
       {/* NAVBAR */}
-      <header className="bg-[#c27a82] shadow-md">
-        <nav className="flex items-center justify-between px-8 py-4">
+      <header className="bg-[#cb7885] shadow-md">
+        <nav className="flex justify-between items-center px-8 py-4">
           <Link href="/" className="text-lg font-semibold">
             ERAILE BEAUTY
           </Link>
 
-          <div className="flex items-center gap-6 text-sm uppercase">
+          <div className="flex gap-6 items-center text-sm uppercase">
             <Link href="/">Home</Link>
             <Link href="/services">Services</Link>
             <Link href="/book">Book</Link>
@@ -184,15 +178,12 @@ export default function BookPage() {
             {!loggedIn ? (
               <Link
                 href="/login"
-                className="ml-4 bg-[#f4e6d8] px-4 py-2 rounded-full text-xs"
+                className="bg-white px-4 py-2 rounded-full text-xs"
               >
-                LOGIN
+                Login
               </Link>
             ) : (
-              <div
-                onClick={() => router.push("/profile")}
-                className="ml-4 h-10 w-10 rounded-full bg-[#f4e6d8] flex items-center justify-center cursor-pointer"
-              >
+              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center">
                 {initials}
               </div>
             )}
@@ -203,7 +194,7 @@ export default function BookPage() {
       {/* TITLE */}
       <section className="text-center pt-12">
         <h1 className="text-4xl font-semibold">Book an Appointment</h1>
-        <p className="mt-2 text-gray-500">
+        <p className="text-gray-600 mt-2">
           Choose your service and preferred staff
         </p>
       </section>
@@ -212,17 +203,15 @@ export default function BookPage() {
       <section className="max-w-5xl mx-auto mt-10 px-6">
         <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
 
-          {/* PERSONAL */}
-          <div className="p-6 border rounded-2xl bg-white">
-            <h2 className="text-sm font-semibold mb-4">
-              PERSONAL INFO
-            </h2>
+          {/* LEFT */}
+          <div className="bg-white p-6 rounded-2xl shadow space-y-4">
+            <h2 className="font-semibold">Personal Info</h2>
 
             <input
               value={form.fullName}
               onChange={(e) => update("fullName", e.target.value)}
               placeholder="Full Name"
-              className="w-full mb-3 p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg"
             />
 
             <input
@@ -233,38 +222,28 @@ export default function BookPage() {
             />
           </div>
 
-          {/* BOOKING */}
-          <div className="p-6 border rounded-2xl bg-white">
-            <h2 className="text-sm font-semibold mb-4">
-              BOOKING DETAILS
-            </h2>
+          {/* RIGHT */}
+          <div className="bg-white p-6 rounded-2xl shadow space-y-4">
+            <h2 className="font-semibold">Booking Details</h2>
 
-            {/* CATEGORY */}
             <select
               value={form.category}
               onChange={(e) => update("category", e.target.value)}
-              className="w-full mb-3 p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg"
             >
               <option value="">Select Category</option>
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c.charAt(0).toUpperCase() + c.slice(1)}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
 
-            {/* SERVICE */}
             <select
               value={form.serviceId}
               onChange={(e) => update("serviceId", e.target.value)}
-              className="w-full mb-3 p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg"
+              disabled={!form.category}
             >
-              <option value="">
-                {form.category
-                  ? "Choose service"
-                  : "Select category first"}
-              </option>
-
+              <option value="">Select Service</option>
               {filteredServices.map((s) => (
                 <option key={s.serviceId} value={s.serviceId}>
                   {s.type}
@@ -272,62 +251,46 @@ export default function BookPage() {
               ))}
             </select>
 
-            {/* DATE + TIME */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <select
+              value={form.staffId}
+              onChange={(e) => update("staffId", e.target.value)}
+              className="w-full p-3 border rounded-lg"
+              disabled={!form.serviceId}
+            >
+              {loadingStaff && <option>Loading...</option>}
+              {!loadingStaff && (
+                <>
+                  <option value="any">Any staff</option>
+                  {staffList.map((s) => (
+                    <option key={s.staffId} value={s.staffId}>
+                      {s.name}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+
+            <div className="flex gap-3">
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => update("date", e.target.value)}
-                className="p-3 border rounded-lg"
+                className="w-1/2 p-3 border rounded-lg"
               />
 
               <select
                 value={form.time}
                 onChange={(e) => update("time", e.target.value)}
-                className="p-3 border rounded-lg"
+                className="w-1/2 p-3 border rounded-lg"
               >
                 <option value="">Time</option>
                 {times.map((t) => (
-                  <option key={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
-
-            {/* STAFF */}
-            <select
-              value={form.staffId}
-              onChange={(e) => update("staffId", e.target.value)}
-              disabled={!form.serviceId || loadingStaff}
-              className="w-full p-3 border rounded-lg"
-            >
-              <option value="any">
-                {!form.serviceId
-                  ? "Select service first"
-                  : loadingStaff
-                  ? "Loading staff..."
-                  : "Any staff"}
-              </option>
-
-              {staffOptions.map((st) => (
-                <option key={st.staffId} value={st.staffId}>
-                  {st.name}
-                </option>
-              ))}
-            </select>
           </div>
-        </form>
 
-        {/* BUTTON */}
-        <div className="text-center mt-8">
-          <button
-            onClick={onSubmit}
-            className="bg-[#c27a82] text-white px-8 py-3 rounded-xl"
-          >
-            Continue
-          </button>
-        </div>
-      </section>
-    </main>
-  );
-}
-
+          {/* BUTTON */}

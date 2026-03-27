@@ -1,35 +1,19 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PUT(req: Request, ctx: { params: Promise<{ appId: string }> }) {
-  const { appId } = await ctx.params;
-  const id = Number(appId);
-  if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid appId" }, { status: 400 });
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = Number(params.id);
 
-  const body = await req.json();
+    await prisma.appointment.delete({
+      where: { appId: id },
+    });
 
-  const data: any = {};
-  if (body?.service != null) data.service = String(body.service).trim();
-  if (body?.staff !== undefined) data.staff = body.staff ? String(body.staff).trim() : null;
-  if (body?.appDate != null) data.appDate = new Date(String(body.appDate));
-  if (body?.appTime != null) data.appTime = String(body.appTime).trim();
-  if (body?.amount !== undefined) data.amount = body.amount ? String(body.amount).trim() : null;
-  if (body?.status != null) data.status = String(body.status).trim();
-
-  const updated = await prisma.appointment.update({
-    where: { appId: id },
-    data,
-    include: { customer: { select: { custId: true, name: true, phoneNo: true } } },
-  });
-
-  return NextResponse.json(updated);
-}
-
-export async function DELETE(_: Request, ctx: { params: Promise<{ appId: string }> }) {
-  const { appId } = await ctx.params;
-  const id = Number(appId);
-  if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid appId" }, { status: 400 });
-
-  await prisma.appointment.delete({ where: { appId: id } });
-  return NextResponse.json({ ok: true });
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("DELETE ERROR:", err);
+    return Response.json({ error: "Delete failed" }, { status: 500 });
+  }
 }

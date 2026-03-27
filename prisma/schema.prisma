@@ -21,6 +21,7 @@ model Customer {
   phoneNo      String        @unique
   emailId      String        @unique
   password     String
+  role         String        @default("user")
   appointments Appointment[]
   payments     Payment[]
 
@@ -31,32 +32,31 @@ model Appointment {
   appId    Int       @id @default(autoincrement())
   custId   Int
   service  String
-  staff    String?
+  staff    String
   appDate  DateTime
   appTime  String
-  amount   String?
-  status   String    @default("scheduled")
-  customer Customer  @relation(fields: [custId], references: [custId], onDelete: Cascade)
+  status   String
+  amount   Int
+  customer Customer  @relation(fields: [custId], references: [custId])
   payments Payment[]
 
-  @@index([custId])
-  @@index([appDate])
   @@map("appointment")
 }
 
 model Staff {
-  staffId  Int       @id @default(autoincrement())
-  name     String
-  services Service[] @relation("StaffServices")
+  staffId       Int             @id @default(autoincrement())
+  name          String
+  StaffServices StaffServices[]
 
   @@map("staff")
 }
 
 model Service {
-  serviceId Int     @id @default(autoincrement())
-  type      String  @unique
-  category  String?
-  staff     Staff[] @relation("StaffServices")
+  serviceId     Int             @id @default(autoincrement())
+  type          String          @unique
+  category      String?
+  price         Int
+  StaffServices StaffServices[]
 
   @@map("service")
 }
@@ -66,10 +66,22 @@ model Payment {
   custId      Int
   appId       Int
   method      String
+  amount      Int
   appointment Appointment @relation(fields: [appId], references: [appId], onDelete: Cascade)
   customer    Customer    @relation(fields: [custId], references: [custId], onDelete: Cascade)
 
   @@index([custId])
   @@index([appId])
   @@map("payment")
+}
+
+model StaffServices {
+  serviceId Int
+  staffId   Int
+  service   Service @relation(fields: [serviceId], references: [serviceId], onDelete: Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [staffId], onDelete: Cascade)
+
+  @@id([serviceId, staffId], map: "_StaffServices_AB_pkey")
+  @@index([staffId], map: "_StaffServices_B_index")
+  @@map("_StaffServices")
 }

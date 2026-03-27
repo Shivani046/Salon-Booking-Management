@@ -1,25 +1,19 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const staff = await prisma.staff.findMany({
-      orderBy: { name: "asc" },
       include: {
-        services: {
-          select: {
-            serviceId: true,
-            type: true,
-            category: true,
-          },
-        },
+        StaffServices: true, // 👈 THIS replaces staffServices
       },
     });
 
     return NextResponse.json(staff);
-  } catch (err: any) {
+  } catch (error) {
+    console.error("STAFF ERROR:", error);
     return NextResponse.json(
-      { error: err?.message ?? "Failed to fetch staff" },
+      { error: "Failed to load staff" },
       { status: 500 }
     );
   }
