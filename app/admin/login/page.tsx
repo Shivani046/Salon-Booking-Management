@@ -24,14 +24,16 @@ export default function AdminLoginPage() {
   const [loggedInHere, setLoggedInHere] = useState(false);
 
   function login() {
-    if (username.trim() !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-      alert("Wrong username or password");
-      return;
-    }
-    localStorage.setItem(ADMIN_SESSION_KEY, "true");
-    setLoggedInHere(true); // no auto redirect
+  if (username.trim() !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    alert("Wrong username or password");
+    return;
   }
 
+  localStorage.setItem(ADMIN_SESSION_KEY, "true");
+
+  // ✅ auto redirect
+  router.push("/admin/dashboard");
+}
   return (
     <main style={page}>
       <div style={card}>
