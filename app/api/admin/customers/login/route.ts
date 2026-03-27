@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
     }
 
     // 🔐 simple password check (no bcrypt here)
-    if (user.password !== password) {
+    const actual = crypto.createHash('sha256').update(password).digest();
+    const expected = crypto.createHash('sha256').update(user.password).digest();
+    if (!crypto.timingSafeEqual(actual, expected)) {
       return NextResponse.json(
         { error: "Invalid password" },
         { status: 401 }
