@@ -293,4 +293,26 @@ export default function BookPage() {
             </div>
           </div>
 
-          {/* BUTTON */}
+                    {/* BUTTON */}
+          <div className="col-span-2 text-center mt-4">
+            <button
+              type="submit"
+              disabled={!isValid}
+              className={`px-10 py-3 rounded-xl text-white transition ${
+                isValid
+                  ? "bg-[#cb7885] hover:bg-[#b46a75]"
+                  : "bg-gray-300 cursor-not-allowed"
+              }`}
+            >
+              Continue
+            </button>
+          </div>
+
+        </form>
+        {errorMessage && (
+          <p className="text-red-600 text-center mt-4">{errorMessage}</p>
+        )}
+      </section>
+    </main>
+  );
+}
