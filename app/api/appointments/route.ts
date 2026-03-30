@@ -1,22 +1,27 @@
-import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
+// GET all appointments
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select("*");
+    const appointments = await prisma.appointments.findMany({
+      orderBy: { appDate: "desc" },
+      select: {
+        appId: true,
+        custId: true,
+        service: true,
+        staff: true,
+        appDate: true,
+        appTime: true,
+        status: true,
+        amount: true,
+      },
+    });
 
-    if (error) {
-      return Response.json({ error: error.message });
-    }
-
-    return Response.json(data);
+    return NextResponse.json(appointments);
   } catch (err) {
-    return Response.json({ error: "Fetch failed" });
+    console.error("GET APPOINTMENTS ERROR:", err);
+    return NextResponse.json([], { status: 500 });
   }
 }
+

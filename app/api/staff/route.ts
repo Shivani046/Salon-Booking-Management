@@ -1,24 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// GET staff by serviceId
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const serviceId = Number(searchParams.get("serviceId"));
+    const serviceId = searchParams.get("serviceId");
 
-    if (!serviceId) return NextResponse.json([]);
+    if (!serviceId) {
+      return NextResponse.json([], { status: 400 });
+    }
 
-    const staff = await prisma.$queryRawUnsafe(`
-      SELECT s."staffId", s.name
-      FROM "staff" s
-      INNER JOIN "_StaffServices" ss
-      ON s."staffId" = ss."staffId"
-      WHERE ss."serviceId" = ${serviceId}
-    `);
+    const staff = await prisma.staff.findMany({
+      where: {
+        StaffServices: {
+          some: { serviceId: Number(serviceId) },
+        },
+      },
+      select: {
+        staffId: true,
+        name: true,
+      },
+    });
 
     return NextResponse.json(staff);
-  } catch (error) {
-    console.error("API ERROR:", error);
-    return NextResponse.json([]);
+  } catch (err) {
+    console.error("GET STAFF ERROR:", err);
+    return NextResponse.json([], { status: 500 });
   }
 }

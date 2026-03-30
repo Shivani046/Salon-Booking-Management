@@ -43,7 +43,7 @@ export default function BookPage() {
     phone: "",
     category: "",
     serviceId: "",
-    staffId: "any",
+    staffId: "",
     date: "",
     time: "",
   });
@@ -58,7 +58,7 @@ export default function BookPage() {
 
   function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    setErrorMessage(""); // clear errors when user changes input
+    setErrorMessage("");
   }
 
   const isValid =
@@ -66,17 +66,20 @@ export default function BookPage() {
     form.phone.trim() &&
     form.category &&
     form.serviceId &&
+    form.staffId && // include staffId
     form.date &&
     form.time;
 
   useEffect(() => {
-    setProfileName(localStorage.getItem("profileName") || "User");
-    setLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    if (typeof window !== "undefined") {
+      setProfileName(localStorage.getItem("profileName") || "User");
+      setLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    }
   }, []);
 
   const initials = useMemo(() => getInitials(profileName), [profileName]);
 
-  // ---------------- SERVICES ----------------
+  // Services
   useEffect(() => {
     fetch("/api/services")
       .then((res) => res.json())
@@ -84,15 +87,13 @@ export default function BookPage() {
       .catch((err) => console.error("Service fetch error:", err));
   }, []);
 
-  // ---------------- STAFF ----------------
+  // Staff
   useEffect(() => {
     if (!form.serviceId) {
       setStaffList([]);
       return;
     }
-
     setLoadingStaff(true);
-
     fetch(`/api/staff?serviceId=${Number(form.serviceId)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch staff");
@@ -102,23 +103,22 @@ export default function BookPage() {
       .then(setStaffList)
       .catch((err) => {
         console.error("Staff fetch error:", err);
+        setErrorMessage("Could not load staff for this service.");
         setStaffList([]);
       })
       .finally(() => setLoadingStaff(false));
   }, [form.serviceId]);
 
-  // ---------------- CATEGORY ----------------
-  const categories = useMemo(() => {
-    return Array.from(new Set(services.map((s) => s.category).filter(Boolean)));
-  }, [services]);
+  const categories = useMemo(
+    () => Array.from(new Set(services.map((s) => s.category).filter(Boolean))),
+    [services]
+  );
 
-  // ---------------- FILTER SERVICES ----------------
-  const filteredServices = useMemo(() => {
-    if (!form.category) return [];
-    return services.filter((s) => s.category === form.category);
-  }, [services, form.category]);
+  const filteredServices = useMemo(
+    () => services.filter((s) => s.category === form.category),
+    [services, form.category]
+  );
 
-  // ---------------- TIME ----------------
   const times = useMemo(() => {
     const arr: string[] = [];
     for (let h = 10; h <= 20; h++) {
@@ -128,10 +128,8 @@ export default function BookPage() {
     return arr;
   }, []);
 
-  // ---------------- SUBMIT ----------------
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (!isValid) {
       setErrorMessage("Please fill all required fields.");
       return;
@@ -140,7 +138,6 @@ export default function BookPage() {
     const service = services.find(
       (s) => String(s.serviceId) === form.serviceId
     );
-
     const staff =
       form.staffId === "any"
         ? "ANY"
@@ -161,20 +158,17 @@ export default function BookPage() {
 
   return (
     <main className="min-h-screen bg-[#f7ecd8] text-[#23181a]">
-
       {/* NAVBAR */}
       <header className="bg-[#cb7885] shadow-md">
         <nav className="flex justify-between items-center px-8 py-4">
           <Link href="/" className="text-lg font-semibold">
             ERAILE BEAUTY
           </Link>
-
           <div className="flex gap-6 items-center text-sm uppercase">
             <Link href="/">Home</Link>
             <Link href="/services">Services</Link>
             <Link href="/book">Book</Link>
             <Link href="/contact">Contact</Link>
-
             {!loggedIn ? (
               <Link
                 href="/login"
@@ -202,18 +196,15 @@ export default function BookPage() {
       {/* FORM */}
       <section className="max-w-5xl mx-auto mt-10 px-6">
         <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
-
           {/* LEFT */}
           <div className="bg-white p-6 rounded-2xl shadow space-y-4">
             <h2 className="font-semibold">Personal Info</h2>
-
             <input
               value={form.fullName}
               onChange={(e) => update("fullName", e.target.value)}
               placeholder="Full Name"
               className="w-full p-3 border rounded-lg"
             />
-
             <input
               value={form.phone}
               onChange={(e) => update("phone", e.target.value)}
@@ -226,6 +217,7 @@ export default function BookPage() {
           <div className="bg-white p-6 rounded-2xl shadow space-y-4">
             <h2 className="font-semibold">Booking Details</h2>
 
+            {/* Category */}
             <select
               value={form.category}
               onChange={(e) => update("category", e.target.value)}
@@ -233,24 +225,29 @@ export default function BookPage() {
             >
               <option value="">Select Category</option>
               {categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-
-            <select
-              value={form.serviceId}
-              onChange={(e) => update("serviceId", e.target.value)}
-              className="w-full p-3 border rounded-lg"
-              disabled={!form.category}
-            >
-              <option value="">Select Service</option>
-              {filteredServices.map((s) => (
-                <option key={s.serviceId} value={s.serviceId}>
-                  {s.type}
+                <option key={c} value={c}>
+                  {c}
                 </option>
               ))}
             </select>
 
+            {/* Service */}
+            <select
+  value={form.serviceId}
+  onChange={(e) => update("serviceId", e.target.value)}
+  className="w-full p-3 border rounded-lg"
+  disabled={!form.category}
+>
+  <option value="">Select Service</option>
+  {filteredServices.map((s) => (
+    <option key={s.serviceId} value={s.serviceId}>
+      {s.type}
+    </option>
+  ))}
+</select>
+
+
+            {/* Staff */}
             <select
               value={form.staffId}
               onChange={(e) => update("staffId", e.target.value)}
@@ -270,6 +267,7 @@ export default function BookPage() {
               )}
             </select>
 
+            {/* Date & Time */}
             <div className="flex gap-3">
               <input
                 type="date"
@@ -277,7 +275,6 @@ export default function BookPage() {
                 onChange={(e) => update("date", e.target.value)}
                 className="w-1/2 p-3 border rounded-lg"
               />
-
               <select
                 value={form.time}
                 onChange={(e) => update("time", e.target.value)}
@@ -293,7 +290,7 @@ export default function BookPage() {
             </div>
           </div>
 
-                    {/* BUTTON */}
+          {/* BUTTON */}
           <div className="col-span-2 text-center mt-4">
             <button
               type="submit"
@@ -307,8 +304,8 @@ export default function BookPage() {
               Continue
             </button>
           </div>
-
         </form>
+
         {errorMessage && (
           <p className="text-red-600 text-center mt-4">{errorMessage}</p>
         )}

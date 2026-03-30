@@ -16,31 +16,16 @@ model Admin {
 }
 
 model Customer {
-  custId       Int           @id @default(autoincrement())
+  custId       Int            @id @default(autoincrement())
   name         String
-  phoneNo      String        @unique
-  emailId      String        @unique
+  phoneNo      String         @unique
+  emailId      String         @unique
   password     String
-  role         String        @default("user")
-  appointments Appointment[]
+  role         String         @default("user")
+  appointments appointments[]
   payments     Payment[]
 
   @@map("customer")
-}
-
-model Appointment {
-  appId    Int       @id @default(autoincrement())
-  custId   Int
-  service  String
-  staff    String
-  appDate  DateTime
-  appTime  String
-  status   String
-  amount   Int
-  customer Customer  @relation(fields: [custId], references: [custId])
-  payments Payment[]
-
-  @@map("appointment")
 }
 
 model Staff {
@@ -62,13 +47,13 @@ model Service {
 }
 
 model Payment {
-  payId       Int         @id @default(autoincrement())
+  payId       Int          @id @default(autoincrement())
   custId      Int
   appId       Int
   method      String
   amount      Int
-  appointment Appointment @relation(fields: [appId], references: [appId], onDelete: Cascade)
-  customer    Customer    @relation(fields: [custId], references: [custId], onDelete: Cascade)
+  appointment appointments @relation(fields: [appId], references: [appId], onDelete: Cascade)
+  customer    Customer     @relation(fields: [custId], references: [custId], onDelete: Cascade)
 
   @@index([custId])
   @@index([appId])
@@ -84,4 +69,18 @@ model StaffServices {
   @@id([serviceId, staffId], map: "_StaffServices_AB_pkey")
   @@index([staffId], map: "_StaffServices_B_index")
   @@map("_StaffServices")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model appointments {
+  appId    Int       @id(map: "appointment_pkey") @default(autoincrement())
+  custId   Int
+  service  String
+  staff    String
+  appDate  DateTime
+  appTime  String
+  status   String
+  amount   Int
+  customer Customer  @relation(fields: [custId], references: [custId], map: "appointment_custId_fkey")
+  payments Payment[]
 }
