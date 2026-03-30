@@ -2,15 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { isSameDay } from "date-fns";
 
-// Define a type for appointments
 type Appointment = {
   appDate: Date;
   amount: number | null;
 };
 
-export async function GET(): Promise<NextResponse> {
+export async function GET() {
   try {
-    // Fetch raw appointments (amount may come back as string)
+    // Fetch raw appointments (plural model name)
     const rawAppointments = await prisma.appointments.findMany({
       orderBy: { appDate: "desc" },
       select: { appDate: true, amount: true },
@@ -36,7 +35,7 @@ export async function GET(): Promise<NextResponse> {
       0
     );
 
-    // Format revenue as currency (Indian Rupees here)
+    // Format revenue as currency
     const formattedRevenue = new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -52,4 +51,5 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }
+
 
