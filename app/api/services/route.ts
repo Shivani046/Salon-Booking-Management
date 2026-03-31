@@ -7,7 +7,7 @@ export async function GET() {
     const services = await prisma.service.findMany({
       orderBy: { category: "asc" },
       select: {
-        serviceId: true,
+        id: true,
         type: true,
         category: true,
         price: true,

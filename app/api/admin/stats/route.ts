@@ -9,13 +9,11 @@ type Appointment = {
 
 export async function GET() {
   try {
-    // Fetch raw appointments (plural model name)
-    const rawAppointments = await prisma.appointments.findMany({
+    const rawAppointments = await prisma.appointment.findMany({
       orderBy: { appDate: "desc" },
       select: { appDate: true, amount: true },
     });
 
-    // Normalize amount into numbers
     const appointments: Appointment[] = rawAppointments.map(a => ({
       appDate: a.appDate,
       amount: a.amount ? Number(a.amount) : null,
@@ -23,19 +21,16 @@ export async function GET() {
 
     const today = new Date();
 
-    // Filter today's appointments
     const todays = appointments.filter(a =>
       isSameDay(new Date(a.appDate), today)
     );
     const todaysAppointments = todays.length;
 
-    // Calculate today's revenue
     const todaysRevenue = todays.reduce(
       (sum, a) => sum + (a.amount ?? 0),
       0
     );
 
-    // Format revenue as currency
     const formattedRevenue = new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -51,5 +46,7 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }
+
+
 
 

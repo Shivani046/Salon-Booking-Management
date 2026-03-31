@@ -13,12 +13,12 @@ export async function GET(req: Request) {
 
     const staff = await prisma.staff.findMany({
       where: {
-        StaffServices: {
+        staffServices: {
           some: { serviceId: Number(serviceId) },
         },
       },
       select: {
-        staffId: true,
+        id: true,
         name: true,
       },
     });
@@ -29,3 +29,4 @@ export async function GET(req: Request) {
     return NextResponse.json([], { status: 500 });
   }
 }
+

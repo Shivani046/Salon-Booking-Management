@@ -4,11 +4,11 @@ import { prisma } from "@/lib/prisma";
 // GET all appointments
 export async function GET() {
   try {
-    const appointments = await prisma.appointments.findMany({
+    const appointments = await prisma.appointment.findMany({
       orderBy: { appDate: "desc" },
       select: {
-        appId: true,
-        custId: true,
+        id: true,
+        customerId: true,
         service: true,
         staff: true,
         appDate: true,

@@ -16,12 +16,12 @@ model Admin {
 }
 
 model Customer {
-  id           Int          @id @default(autoincrement())
+  id           Int           @id @default(autoincrement()) @map("custId")
   name         String
-  phoneNo      String       @unique
-  emailId      String       @unique
+  phoneNo      String        @unique
+  emailId      String        @unique
   password     String
-  role         String       @default("user")
+  role         String        @default("user")
   appointments Appointment[]
   payments     Payment[]
 
@@ -29,7 +29,7 @@ model Customer {
 }
 
 model Staff {
-  id            Int            @id @default(autoincrement())
+  id            Int            @id @default(autoincrement()) @map("staffId")
   name          String
   staffServices StaffService[]
 
@@ -37,7 +37,7 @@ model Staff {
 }
 
 model Service {
-  id            Int            @id @default(autoincrement())
+  id            Int            @id @default(autoincrement()) @map("serviceId")
   type          String         @unique
   category      String?
   price         Int
@@ -47,11 +47,12 @@ model Service {
 }
 
 model Payment {
-  id          Int         @id @default(autoincrement())
-  customerId  Int
+  id            Int    @id @default(autoincrement())
+  customerId    Int
   appointmentId Int
-  method      String
-  amount      Int
+  method        String
+  amount        Int
+
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -72,17 +73,17 @@ model StaffService {
 }
 
 model Appointment {
-  id       Int       @id @default(autoincrement())
-  customerId Int
-  service  String
-  staff    String
-  appDate  DateTime
-  appTime  String
-  status   String
-  amount   Int
+  id         Int      @id @default(autoincrement()) @map("appId")
+  customerId Int      @map("custId")
+  service    String
+  staff      String
+  appDate    DateTime
+  appTime    String
+  status     String
+  amount     Int
+
   customer Customer  @relation(fields: [customerId], references: [id])
   payments Payment[]
 
   @@map("appointments")
 }
-
