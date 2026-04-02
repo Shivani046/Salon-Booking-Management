@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const { emailId, phone, password } = await req.json();
+
     // Support login by email OR phone
-    const user = await prisma.customer.findFirst({
-      where: emailId
-        ? { emailId, password }
-        : { phoneNo: phone, password },
-    });
+    const where = emailId
+      ? { emailId, password }
+      : { phoneNo: phone, password };
+
+    const user = await prisma.customer.findFirst({ where });
 
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
@@ -22,7 +23,8 @@ export async function POST(req) {
       emailId: user.emailId,
       phoneNo: user.phoneNo,
     });
-  } catch {
+
+  } catch (err) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
