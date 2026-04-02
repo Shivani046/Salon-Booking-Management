@@ -5,19 +5,18 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
 
-  // Build dynamic where clause in a type-safe/lint-friendly way
   const where = q
     ? {
         OR: [
-          { service: { type: { contains: q, mode: "insensitive" } } },
-          { staff: { name: { contains: q, mode: "insensitive" } } },
+          { service: { is: { type: { contains: q, mode: "insensitive" } } } },
+          { staff: { is: { name: { contains: q, mode: "insensitive" } } } },
           { status: { contains: q, mode: "insensitive" } },
         ],
       }
     : undefined;
 
   const appointments = await prisma.appointment.findMany({
-    where, // direct pass of where object (or undefined)
+    where,
     orderBy: { appId: "desc" },
     take: 50,
     select: {
