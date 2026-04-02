@@ -13,5 +13,7 @@ import ServicesPage from "../../app/services/page";
 
 test("renders Hair service group", () => {
   render(<ServicesPage />);
-  expect(screen.getByText(/Hair/i)).toBeInTheDocument();
+  const heading = screen.getByRole("heading", { name: /Hair/i });
+expect(heading).toBeInTheDocument();
+
 });

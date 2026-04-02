@@ -37,8 +37,9 @@
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "prisma": "^6.19.2",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4",
-    "ts-jest": "^29.4.6",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.9.3"
   }
 }

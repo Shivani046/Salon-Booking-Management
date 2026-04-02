@@ -7,11 +7,14 @@ export async function POST(req: Request) {
 
   const name = String(body?.name ?? "").trim();
   const phoneNo = String(body?.phoneNo ?? "").trim();
-  const emailId = String(body?.emailId ?? "").trim();
+  const emailId = String(body?.emailId ?? "").trim().toLowerCase();
   const password = String(body?.password ?? "");
 
   if (!name || !phoneNo || !emailId || !password) {
-    return NextResponse.json({ error: "All fields are required." }, { status: 400 });
+    return NextResponse.json(
+      { error: "All fields are required." },
+      { status: 400 }
+    );
   }
 
   const hashed = await bcrypt.hash(password, 10);
@@ -21,13 +24,19 @@ export async function POST(req: Request) {
       data: { name, phoneNo, emailId, password: hashed },
     });
 
+    // ✅ Use `id` and alias to custId
     return NextResponse.json({
-      custId: customer.custId,
+      custId: customer.id,
       name: customer.name,
       phoneNo: customer.phoneNo,
       emailId: customer.emailId,
     });
-  } catch {
-    return NextResponse.json({ error: "Phone or email already exists." }, { status: 409 });
+
+  } catch (err) {
+    console.error("SIGNUP ERROR:", err);
+    return NextResponse.json(
+      { error: "Phone or email already exists." },
+      { status: 409 }
+    );
   }
 }

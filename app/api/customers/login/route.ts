@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find user
+    // Find customer by email
     const user = await prisma.customer.findUnique({
       where: { emailId },
     });
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Compare password (bcrypt)
+    // Compare password
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
@@ -39,22 +39,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Success
+    // Success — alias Prisma's `id` to `custId` in JSON
     return NextResponse.json({
       message: "Login successful",
-      custId: user.custId,
+      custId: user.id,       // ✅ use `id`, alias to custId
       name: user.name,
       emailId: user.emailId,
       phoneNo: user.phoneNo,
-      role: user.role, // useful for admin redirect
+      role: user.role,
     });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-
+    console.error("CUSTOMER LOGIN ERROR:", err);
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+

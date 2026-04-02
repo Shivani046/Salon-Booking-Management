@@ -1,10 +1,14 @@
 const { createDefaultPreset } = require("ts-jest");
 
-/** @type {import("jest").Config} */
+/** @type {import('jest').Config} */
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
-  setupFilesAfterEnv: ["@testing-library/jest-dom"],
+  // Load extra setup (TextEncoder polyfill, jest-dom matchers, etc.)
+  setupFilesAfterEnv: [
+    "@testing-library/jest-dom",
+    "<rootDir>/config/jest.setup.js"
+  ],
   transform: {
     ...createDefaultPreset().transform,
   },
@@ -15,3 +19,5 @@ module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   clearMocks: true,
 };
+
+

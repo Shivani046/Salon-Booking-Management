@@ -1,6 +1,6 @@
-import crypto from "node:crypto";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     const emailId = String(body?.emailId ?? "").trim().toLowerCase();
     const password = String(body?.password ?? "").trim();
 
+    // Validate input
     if (!emailId || !password) {
       return NextResponse.json(
         { error: "Email and password required" },
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Find admin user
     const user = await prisma.customer.findUnique({
       where: { emailId },
     });
@@ -27,31 +29,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔐 simple password check (no bcrypt here)
-    const actual = crypto.createHash('sha256').update(password).digest();
-    const expected = crypto.createHash('sha256').update(user.password).digest();
-    if (!crypto.timingSafeEqual(actual, expected)) {
+    // Compare password
+    const isValid = await bcrypt.compare(password, user.password);
+
+    if (!isValid) {
       return NextResponse.json(
         { error: "Invalid password" },
         { status: 401 }
       );
     }
 
-    // ✅ IMPORTANT: send custId
+    // Success — alias Prisma's `id` to `custId` in JSON
     return NextResponse.json({
       message: "Login successful",
-      custId: user.custId,
+      custId: user.id,       // ✅ use `id`, alias to custId
       name: user.name,
       emailId: user.emailId,
       phoneNo: user.phoneNo,
+      role: user.role,
     });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-
+    console.error("ADMIN LOGIN ERROR:", err);
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+

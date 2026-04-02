@@ -15,10 +15,18 @@ export async function GET(req: Request) {
           ],
         }
       : undefined,
-    orderBy: { name: "asc" },
+    orderBy: { id: "desc" },
     take: 50,
-    select: { custId: true, name: true, phoneNo: true, emailId: true },
+    select: { id: true, name: true, phoneNo: true, emailId: true }, // ✅ use id
   });
 
-  return NextResponse.json(customers);
+  // Alias id → custId in the response
+  const result = customers.map(c => ({
+    custId: c.id,
+    name: c.name,
+    phoneNo: c.phoneNo,
+    emailId: c.emailId,
+  }));
+
+  return NextResponse.json(result);
 }
