@@ -8,9 +8,9 @@ export async function GET(req: Request) {
   const where = q
     ? {
         OR: [
-          { service: { is: { type: { contains: q, mode: "insensitive" } } } },
-          { staff: { is: { name: { contains: q, mode: "insensitive" } } } },
-          { status: { contains: q, mode: "insensitive" } },
+          { service: { is: { type: { contains: q, mode: "insensitive" as const } } } },
+          { staff: { is: { name: { contains: q, mode: "insensitive" as const } } } },
+          { status: { contains: q, mode: "insensitive" as const } },
         ],
       }
     : undefined;
