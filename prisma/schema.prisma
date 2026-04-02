@@ -16,7 +16,7 @@ model Admin {
 }
 
 model Customer {
-  id           Int           @id @default(autoincrement()) @map("custId")
+  custId       Int           @id @default(autoincrement())   // ✅ renamed field
   name         String
   phoneNo      String        @unique
   emailId      String        @unique
@@ -29,18 +29,18 @@ model Customer {
 }
 
 model Staff {
-  id            Int            @id @default(autoincrement()) @map("staffId")
-  name          String
+  staffId      Int            @id @default(autoincrement())  // ✅ renamed field
+  name         String
   staffServices StaffService[]
 
   @@map("staff")
 }
 
 model Service {
-  id            Int            @id @default(autoincrement()) @map("serviceId")
-  type          String         @unique
-  category      String?
-  price         Int
+  serviceId    Int            @id @default(autoincrement())  // ✅ renamed field
+  type         String         @unique
+  category     String?
+  price        Int
   staffServices StaffService[]
 
   @@map("service")
@@ -53,8 +53,8 @@ model Payment {
   method        String
   amount        Int
 
-  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [appointmentId], references: [appId], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [custId], onDelete: Cascade)
 
   @@index([customerId])
   @@index([appointmentId])
@@ -64,8 +64,8 @@ model Payment {
 model StaffService {
   serviceId Int
   staffId   Int
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [serviceId], onDelete: Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [staffId], onDelete: Cascade)
 
   @@id([serviceId, staffId], map: "_StaffServices_AB_pkey")
   @@index([staffId], map: "_StaffServices_B_index")
@@ -73,7 +73,7 @@ model StaffService {
 }
 
 model Appointment {
-  id         Int      @id @default(autoincrement()) @map("appId")
+  appId      Int      @id @default(autoincrement())          // ✅ renamed field
   customerId Int      @map("custId")
   service    String
   staff      String
@@ -82,8 +82,9 @@ model Appointment {
   status     String
   amount     Int
 
-  customer Customer  @relation(fields: [customerId], references: [id])
+  customer Customer  @relation(fields: [customerId], references: [custId])
   payments Payment[]
 
   @@map("appointments")
 }
+

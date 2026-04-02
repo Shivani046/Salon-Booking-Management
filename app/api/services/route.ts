@@ -1,22 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET all services
-export async function GET() {
-  try {
-    const services = await prisma.service.findMany({
-      orderBy: { category: "asc" },
-      select: {
-        id: true,
-        type: true,
-        category: true,
-        price: true,
-      },
-    });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const q = (searchParams.get("q") ?? "").trim();
 
-    return NextResponse.json(services);
-  } catch (err) {
-    console.error("GET SERVICES ERROR:", err);
-    return NextResponse.json([], { status: 500 });
-  }
+  const services = await prisma.service.findMany({
+    where: q
+      ? {
+          OR: [
+            { type: { contains: q, mode: "insensitive" } },
+            { category: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
+    orderBy: { category: "asc" },
+    take: 50,
+    select: {
+      serviceId: true,   // ✅ use serviceId, not id
+      type: true,
+      category: true,
+      price: true,
+    },
+  });
+
+  const result = services.map(s => ({
+    serviceId: s.serviceId,
+    type: s.type,
+    category: s.category,
+    price: s.price,
+  }));
+
+  return NextResponse.json(result);
 }
+

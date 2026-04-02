@@ -1,32 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET staff by serviceId
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const serviceId = searchParams.get("serviceId");
+  const { searchParams } = new URL(req.url);
+  const q = (searchParams.get("q") ?? "").trim();
 
-    if (!serviceId) {
-      return NextResponse.json([], { status: 400 });
-    }
+  const staff = await prisma.staff.findMany({
+    where: q
+      ? {
+          name: { contains: q, mode: "insensitive" },
+        }
+      : undefined,
+    orderBy: { staffId: "desc" },   // ✅ use staffId
+    take: 50,
+    select: {
+      staffId: true,   // ✅ use staffId, not id
+      name: true,
+    },
+  });
 
-    const staff = await prisma.staff.findMany({
-      where: {
-        staffServices: {
-          some: { serviceId: Number(serviceId) },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+  const result = staff.map(s => ({
+    staffId: s.staffId,
+    name: s.name,
+  }));
 
-    return NextResponse.json(staff);
-  } catch (err) {
-    console.error("GET STAFF ERROR:", err);
-    return NextResponse.json([], { status: 500 });
-  }
+  return NextResponse.json(result);
 }
+
 

@@ -1,42 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET all appointments
-export async function GET() {
-  try {
-    const appointments = await prisma.appointment.findMany({
-      orderBy: { appDate: "desc" },
-      take: 50,
-      select: {
-        id: true,           // ✅ use id, not appId
-        customerId: true,   // ✅ use customerId, not custId
-        service: true,
-        staff: true,
-        appDate: true,
-        appTime: true,
-        status: true,
-        amount: true,
-      },
-    });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const q = (searchParams.get("q") ?? "").trim();
 
-    // Alias fields for frontend
-    const result = appointments.map(a => ({
-      appId: a.id,
-      custId: a.customerId,
-      service: a.service,
-      staff: a.staff,
-      appDate: a.appDate,
-      appTime: a.appTime,
-      status: a.status,
-      amount: a.amount,
-    }));
+  const appointments = await prisma.appointment.findMany({
+    where: q
+      ? {
+          OR: [
+            { service: { contains: q, mode: "insensitive" } },
+            { staff: { contains: q, mode: "insensitive" } },
+            { status: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
+    orderBy: { appId: "desc" },   // ✅ use appId now
+    take: 50,
+    select: {
+      appId: true,        // ✅ primary key
+      customerId: true,   // ✅ mapped to custId in schema
+      service: true,
+      staff: true,
+      appDate: true,
+      appTime: true,
+      status: true,
+      amount: true,
+    },
+  });
 
-    return NextResponse.json(result);
+  const result = appointments.map(a => ({
+    appId: a.appId,
+    customerId: a.customerId,
+    service: a.service,
+    staff: a.staff,
+    appDate: a.appDate,
+    appTime: a.appTime,
+    status: a.status,
+    amount: a.amount,
+  }));
 
-  } catch (err) {
-    console.error("GET APPOINTMENTS ERROR:", err);
-    return NextResponse.json([], { status: 500 });
-  }
+  return NextResponse.json(result);
 }
+
 
 

@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const emailId = String(body?.emailId ?? "").trim().toLowerCase();
     const password = String(body?.password ?? "").trim();
 
-    // Validate input
     if (!emailId || !password) {
       return NextResponse.json(
         { error: "Email and password required" },
@@ -17,7 +16,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find customer by email
     const user = await prisma.customer.findUnique({
       where: { emailId },
     });
@@ -29,9 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Compare password
     const isValid = await bcrypt.compare(password, user.password);
-
     if (!isValid) {
       return NextResponse.json(
         { error: "Invalid password" },
@@ -39,10 +35,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Success — alias Prisma's `id` to `custId` in JSON
     return NextResponse.json({
       message: "Login successful",
-      custId: user.id,       // ✅ use `id`, alias to custId
+      custId: user.custId,   // ✅ use custId, not id
       name: user.name,
       emailId: user.emailId,
       phoneNo: user.phoneNo,
@@ -57,4 +52,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

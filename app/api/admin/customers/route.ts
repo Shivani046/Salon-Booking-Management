@@ -15,14 +15,14 @@ export async function GET(req: Request) {
           ],
         }
       : undefined,
-    orderBy: { id: "desc" },
+    orderBy: { custId: "desc" },   // ✅ use custId now
     take: 50,
-    select: { id: true, name: true, phoneNo: true, emailId: true }, // ✅ use id
+    select: { custId: true, name: true, phoneNo: true, emailId: true }, // ✅ select custId
   });
 
-  // Alias id → custId in the response
+  // Response already has custId, no aliasing needed
   const result = customers.map(c => ({
-    custId: c.id,
+    custId: c.custId,
     name: c.name,
     phoneNo: c.phoneNo,
     emailId: c.emailId,
@@ -30,3 +30,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json(result);
 }
+

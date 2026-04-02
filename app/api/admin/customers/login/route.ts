@@ -38,14 +38,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Success — alias Prisma's `id` to `custId` in JSON
+    // Success — return customer details
     return NextResponse.json({
       message: "Login successful",
-      custId: user.id,        // ✅ Prisma field is `id`, alias to custId
+      custId: user.custId,   // ✅ matches your new schema
       name: user.name,
       emailId: user.emailId,
       phoneNo: user.phoneNo,
-      role: user.role,        // ✅ include role for frontend redirects
+      role: user.role,
     });
 
   } catch (err) {
