@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
-
-// Modal Overlay style for background dimming
-const ModalOverlay = ({ children }: { children: React.ReactNode }) => (
-  <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center min-h-screen">
-    {children}
-  </div>
-);
+import { useMemo, useState } from "react";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
   return parts.map((p) => p[0]?.toUpperCase()).join("") || "U";
 }
+
+// Dims the background for modal effect
+const ModalOverlay = ({ children }: { children: React.ReactNode }) => (
+  <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center min-h-screen">
+    {children}
+  </div>
+);
 
 export default function SignupPage() {
   const router = useRouter();
@@ -28,14 +28,11 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Phone & password validation
+  // Validation
   const isPhoneValid = /^\d{10}$/.test(phoneNo);
   const phoneMessage =
-    phoneNo && !isPhoneValid
-      ? "Phone number must be exactly 10 digits"
-      : "";
+    phoneNo && !isPhoneValid ? "Phone number must be exactly 10 digits" : "";
 
-  // Password validation rules
   const rules = {
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -85,7 +82,6 @@ export default function SignupPage() {
         else setError(data?.error || "Signup failed");
         return;
       }
-
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("custId", String(data.custId));
       localStorage.setItem("profileName", data.name);
@@ -93,7 +89,6 @@ export default function SignupPage() {
       localStorage.setItem("profileEmail", data.emailId);
       localStorage.setItem("profileInitials", initials);
 
-      // Success Modal
       setTimeout(() => {
         router.push("/book");
       }, 1200);
@@ -105,17 +100,10 @@ export default function SignupPage() {
     }
   };
 
-  // For accessibility/focus on modal open
-  const modalRef = useRef<HTMLDivElement>(null);
-  // Focus the modal when it appears (UX)
-  // (Not necessary but improves accessibility experience)
-  // useEffect(() => { modalRef.current?.focus(); }, []);
-
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a] relative overflow-hidden">
-
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a] relative overflow-hidden flex items-center justify-center">
       {/* App Navbar */}
-      <header className="bg-[#cb7885] shadow">
+      <header className="absolute top-0 left-0 w-full bg-[#cb7885] shadow z-50">
         <nav className="flex items-center justify-between px-8 py-4">
           <Link href="/" className="text-lg font-semibold">
             ERAILE BEAUTY
@@ -135,78 +123,80 @@ export default function SignupPage() {
         </nav>
       </header>
 
-      {/* Modal Overlay for form */}
+      {/* Modal Overlay for Form */}
       <ModalOverlay>
-        <div
-          ref={modalRef}
-          className="w-full max-w-md shadow-2xl bg-white rounded-3xl relative z-50 p-8 py-10 focus:outline-none border border-[#ece0d5] flex flex-col items-center animate-fade-in"
-          tabIndex={-1}
-        >
-          <div className="w-16 h-16 rounded-full bg-[#f7ecd8] mb-6 flex items-center justify-center shadow text-3xl font-bold tracking-wide border-2 border-[#eadcd1]">
-            {initials}
+        <div className="w-full max-w-3xl bg-white rounded-3xl flex flex-col md:flex-row items-stretch shadow-2xl border border-[#eadcc6] overflow-hidden">
+          {/* Profile Visual Section (Left) */}
+          <div className="md:w-2/5 flex flex-col items-center justify-center bg-[#f7ecd8] p-10 md:rounded-l-3xl">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#cb7885]/10 flex items-center justify-center text-5xl font-bold shadow-inner border-2 border-[#eadcd1] mb-8">
+              {initials}
+            </div>
+            <h2 className="text-xl font-semibold tracking-wide mb-2 text-[#cb7885]">Welcome!</h2>
+            <p className="text-sm text-gray-500 text-center">
+              Create your account below to begin booking your beauty experience.
+            </p>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight mb-2">Create Your Account</h2>
-          <p className="mb-8 text-gray-500 text-center text-sm">
-            Sign up instantly. All fields are required.
-          </p>
-          <form onSubmit={onSubmit} className="w-full space-y-5">
-            
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full Name"
-              className="border border-[#e8bcb9] w-full p-3 rounded-xl text-lg focus:border-[#cb7885] focus:ring-[#cb7885]/60"
-            />
-
-            <input
-              value={phoneNo}
-              onChange={(e) => {
-                // restrict input to 10 digits
-                let value = e.target.value.replace(/\D/g, "");
-                if (value.length > 10) value = value.slice(0, 10);
-                setPhoneNo(value);
-              }}
-              placeholder="Phone (10 digits only)"
-              className={`border border-[#e8bcb9] w-full p-3 rounded-xl text-lg focus:border-[#cb7885] focus:ring-[#cb7885]/60 ${phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""}`}
-              maxLength={10}
-              pattern="\d{10}"
-              inputMode="numeric"
-            />
-            <span className="block text-xs text-red-500 mb-2">{phoneMessage}</span>
-
+          {/* Form Section (Right) */}
+          <form
+            onSubmit={onSubmit}
+            className="md:w-3/5 w-full flex flex-col justify-center px-10 py-8 gap-3"
+          >
+            <h3 className="text-2xl font-bold mb-3 text-[#23181a]">Sign Up</h3>
+            <div className="flex flex-col md:flex-row gap-4">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Full Name"
+                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
+              />
+              <input
+                value={phoneNo}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, "");
+                  if (value.length > 10) value = value.slice(0, 10);
+                  setPhoneNo(value);
+                }}
+                placeholder="Phone (10 digits)"
+                className={`border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1 ${
+                  phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""
+                }`}
+                maxLength={10}
+                pattern="\d{10}"
+                inputMode="numeric"
+              />
+            </div>
+            {phoneMessage && (
+              <span className="text-xs text-red-500 mb-1">{phoneMessage}</span>
+            )}
             <input
               value={emailId}
               onChange={(e) => setEmailId(e.target.value)}
               type="email"
               placeholder="Email"
-              className="border border-[#e8bcb9] w-full p-3 rounded-xl text-lg focus:border-[#cb7885] focus:ring-[#cb7885]/60"
+              className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] mt-2"
               autoComplete="email"
             />
-
-            {/* PASSWORD */}
-            <div className="relative">
+            {/* Password */}
+            <div className="flex items-center gap-2 mt-2">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="border border-[#e8bcb9] w-full p-3 rounded-xl text-lg focus:border-[#cb7885] focus:ring-[#cb7885]/60 pr-12"
+                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
                 autoComplete="new-password"
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-lg"
+                className="px-3 py-2 bg-gray-100 rounded-lg border text-xs"
                 tabIndex={-1}
-                aria-label="Toggle password visibility"
               >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-
-            {/* Password rules feedback */}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+            {/* Password Rules */}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mt-2 mb-1">
               <p className={rules.length ? "text-green-600" : "text-red-500"}>
                 • At least 8 characters
               </p>
@@ -223,36 +213,45 @@ export default function SignupPage() {
                 • Special character
               </p>
             </div>
-
-            {/* Error or Success */}
             {error && error !== "success" && (
-              <div className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white mb-2">
+              <div className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white mb-1">
                 {error}
               </div>
             )}
             {error === "success" && (
-              <div className="rounded-lg bg-green-500 px-4 py-2 text-sm text-white mb-2 text-center">
+              <div className="rounded-lg bg-green-500 px-4 py-2 text-sm text-white mb-1 text-center">
                 Account created! Redirecting...
               </div>
             )}
-
             <button
               type="submit"
-              disabled={loading || !name || !phoneNo || !emailId || !password || !isPhoneValid || !isPasswordValid}
-              className={`w-full rounded-xl py-3 font-semibold text-white transition shadow
-                ${loading ? "bg-[#b46a75] cursor-not-allowed" : "bg-[#cb7885] hover:bg-[#b46a75]"}
-                `}
+              disabled={
+                loading ||
+                !name ||
+                !phoneNo ||
+                !emailId ||
+                !password ||
+                !isPhoneValid ||
+                !isPasswordValid
+              }
+              className={`w-full rounded-xl py-3 font-semibold text-white mt-3 transition shadow ${
+                loading
+                  ? "bg-[#b46a75] cursor-not-allowed"
+                  : "bg-[#cb7885] hover:bg-[#b46a75]"
+              }`}
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
+            <p className="text-center text-sm text-gray-700 mt-4">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="underline font-medium text-[#cb7885] hover:text-[#b46a75]"
+              >
+                Login
+              </Link>
+            </p>
           </form>
-
-          <p className="text-center text-sm text-gray-600 mt-5">
-            Already have an account?{" "}
-            <Link href="/login" className="underline font-medium text-[#cb7885] hover:text-[#b46a75]">
-              Login
-            </Link>
-          </p>
         </div>
       </ModalOverlay>
     </main>
