@@ -17,20 +17,13 @@ export async function GET(req: Request) {
     orderBy: { category: "asc" },
     take: 50,
     select: {
-      serviceId: true,   // ✅ use serviceId, not id
+      serviceId: true,
       type: true,
       category: true,
       price: true,
     },
   });
 
-  const result = services.map(s => ({
-    serviceId: s.serviceId,
-    type: s.type,
-    category: s.category,
-    price: s.price,
-  }));
-
-  return NextResponse.json(result);
+  return NextResponse.json(services);
 }
 

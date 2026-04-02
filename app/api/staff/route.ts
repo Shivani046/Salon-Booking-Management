@@ -4,27 +4,32 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
+  const serviceId = searchParams.get("serviceId");
+
+  // Build filter
+  let where: any = {};
+
+  if (q) {
+    where.name = { contains: q, mode: "insensitive" };
+  }
+  // If serviceId is present, filter by services.staffService
+  if (serviceId) {
+    where.services = {
+      some: { serviceId: Number(serviceId) },
+    };
+  }
 
   const staff = await prisma.staff.findMany({
-    where: q
-      ? {
-          name: { contains: q, mode: "insensitive" },
-        }
-      : undefined,
-    orderBy: { staffId: "desc" },   // ✅ use staffId
+    where: Object.keys(where).length ? where : undefined,
+    orderBy: { staffId: "desc" },
     take: 50,
     select: {
-      staffId: true,   // ✅ use staffId, not id
+      staffId: true,
       name: true,
     },
   });
 
-  const result = staff.map(s => ({
-    staffId: s.staffId,
-    name: s.name,
-  }));
-
-  return NextResponse.json(result);
+  return NextResponse.json(staff);
 }
 
 

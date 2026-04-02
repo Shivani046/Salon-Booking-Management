@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // <-- Make sure this import is correct for your project
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
 
-  // The only change: no `is:` in the filter!
+  // Build dynamic where clause in a type-safe/lint-friendly way
+  const where = q
+    ? {
+        OR: [
+          { service: { type: { contains: q, mode: "insensitive" } } },
+          { staff: { name: { contains: q, mode: "insensitive" } } },
+          { status: { contains: q, mode: "insensitive" } },
+        ],
+      }
+    : undefined;
+
   const appointments = await prisma.appointment.findMany({
-    where: q
-      ? {
-          OR: [
-            { service: { type: { contains: q, mode: "insensitive" } } },
-            { staff: { name: { contains: q, mode: "insensitive" } } },
-            { status: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
+    where, // direct pass of where object (or undefined)
     orderBy: { appId: "desc" },
     take: 50,
     select: {

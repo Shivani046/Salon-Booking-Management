@@ -53,6 +53,7 @@ export default function BookPage() {
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Start with safe server values, then load client values
   const [profileName, setProfileName] = useState("User");
   const [loggedIn, setLoggedIn] = useState(false);
 
@@ -66,20 +67,22 @@ export default function BookPage() {
     form.phone.trim() &&
     form.category &&
     form.serviceId &&
-    form.staffId && // include staffId
+    form.staffId &&
     form.date &&
     form.time;
 
+  // SSR/client-safety: only update state on client
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setProfileName(localStorage.getItem("profileName") || "User");
-      setLoggedIn(localStorage.getItem("isLoggedIn") === "true");
-    }
+    // This check is not required in useEffect, but safe for TypeScript
+    const name = localStorage.getItem("profileName");
+    const isLogged = localStorage.getItem("isLoggedIn");
+    if (name) setProfileName(name);
+    if (isLogged) setLoggedIn(isLogged === "true");
   }, []);
 
   const initials = useMemo(() => getInitials(profileName), [profileName]);
 
-  // Services
+  // Services fetch
   useEffect(() => {
     fetch("/api/services")
       .then((res) => res.json())
@@ -87,7 +90,7 @@ export default function BookPage() {
       .catch((err) => console.error("Service fetch error:", err));
   }, []);
 
-  // Staff
+  // Staff fetch based on selected service
   useEffect(() => {
     if (!form.serviceId) {
       setStaffList([]);
@@ -177,9 +180,14 @@ export default function BookPage() {
                 Login
               </Link>
             ) : (
-              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => router.push("/profile")}
+                className="h-10 w-10 rounded-full bg-white flex items-center justify-center hover:ring-2 ring-[#cb7885] transition"
+                title="Go to profile"
+              >
                 {initials}
-              </div>
+              </button>
             )}
           </div>
         </nav>
@@ -233,19 +241,18 @@ export default function BookPage() {
 
             {/* Service */}
             <select
-  value={form.serviceId}
-  onChange={(e) => update("serviceId", e.target.value)}
-  className="w-full p-3 border rounded-lg"
-  disabled={!form.category}
->
-  <option value="">Select Service</option>
-  {filteredServices.map((s) => (
-    <option key={s.serviceId} value={s.serviceId}>
-      {s.type}
-    </option>
-  ))}
-</select>
-
+              value={form.serviceId}
+              onChange={(e) => update("serviceId", e.target.value)}
+              className="w-full p-3 border rounded-lg"
+              disabled={!form.category}
+            >
+              <option value="">Select Service</option>
+              {filteredServices.map((s) => (
+                <option key={s.serviceId} value={s.serviceId}>
+                  {s.type}
+                </option>
+              ))}
+            </select>
 
             {/* Staff */}
             <select
