@@ -40,14 +40,15 @@ export async function POST(req: Request) {
     }
 
     // Success — alias Prisma's `id` to `custId` in JSON
-    return NextResponse.json({
-      message: "Login successful",
-      custId: user.id,       // ✅ use `id`, alias to custId
-      name: user.name,
-      emailId: user.emailId,
-      phoneNo: user.phoneNo,
-      role: user.role,
-    });
+   return NextResponse.json({
+  message: "Login successful",
+  custId: user.id,        // ✅ alias Prisma's id to custId
+  name: user.name,
+  emailId: user.emailId,
+  phoneNo: user.phoneNo,
+  role: user.role,        // ✅ include role since frontend uses it
+});
+
 
   } catch (err) {
     console.error("ADMIN LOGIN ERROR:", err);
