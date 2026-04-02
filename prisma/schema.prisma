@@ -1,90 +1,78 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id       Int    @id @default(autoincrement())
-  username String
-  password String
-
-  @@map("admin")
+generator client {
+  provider = "prisma-client-js"
 }
 
 model Customer {
-  custId       Int           @id @default(autoincrement())   // ✅ renamed field
-  name         String
-  phoneNo      String        @unique
-  emailId      String        @unique
-  password     String
-  role         String        @default("user")
+  custId   Int    @id @default(autoincrement())
+  name     String
+  password String
+  phoneNo  String
+  emailId  String @unique
+  role     String @default("user")
+
+  // opposite sides of relations
   appointments Appointment[]
   payments     Payment[]
-
-  @@map("customer")
 }
 
-model Staff {
-  staffId      Int            @id @default(autoincrement())  // ✅ renamed field
-  name         String
-  staffServices StaffService[]
+model Appointment {
+  appId      Int      @id @default(autoincrement())
+  customerId Int
+  serviceId  Int
+  staffId    Int
+  appDate    DateTime
+  appTime    String
+  status     String
+  amount     Float
 
-  @@map("staff")
+  // relations
+  customer Customer  @relation(fields: [customerId], references: [custId])
+  service  Service   @relation(fields: [serviceId], references: [serviceId])
+  staff    Staff     @relation(fields: [staffId], references: [staffId])
+  payments Payment[]
 }
 
 model Service {
-  serviceId    Int            @id @default(autoincrement())  // ✅ renamed field
-  type         String         @unique
-  category     String?
-  price        Int
-  staffServices StaffService[]
+  serviceId Int    @id @default(autoincrement())
+  type      String
+  category  String
+  price     Float
 
-  @@map("service")
+  appointments Appointment[]
+  staff        StaffService[] // ✅ many-to-many join
+}
+
+model Staff {
+  staffId Int    @id @default(autoincrement())
+  name    String
+
+  appointments Appointment[]
+  services     StaffService[] // ✅ many-to-many join
+}
+
+// ✅ join table for many-to-many Staff <-> Service
+model StaffService {
+  staffId   Int
+  serviceId Int
+
+  staff   Staff   @relation(fields: [staffId], references: [staffId])
+  service Service @relation(fields: [serviceId], references: [serviceId])
+
+  @@id([staffId, serviceId])
 }
 
 model Payment {
   id            Int    @id @default(autoincrement())
-  customerId    Int
   appointmentId Int
+  customerId    Int
   method        String
-  amount        Int
+  amount        Float
 
   appointment Appointment @relation(fields: [appointmentId], references: [appId], onDelete: Cascade)
   customer    Customer    @relation(fields: [customerId], references: [custId], onDelete: Cascade)
-
-  @@index([customerId])
-  @@index([appointmentId])
-  @@map("payment")
 }
-
-model StaffService {
-  serviceId Int
-  staffId   Int
-  service   Service @relation(fields: [serviceId], references: [serviceId], onDelete: Cascade)
-  staff     Staff   @relation(fields: [staffId], references: [staffId], onDelete: Cascade)
-
-  @@id([serviceId, staffId], map: "_StaffServices_AB_pkey")
-  @@index([staffId], map: "_StaffServices_B_index")
-  @@map("_StaffServices")
-}
-
-model Appointment {
-  appId      Int      @id @default(autoincrement())          // ✅ renamed field
-  customerId Int      @map("custId")
-  service    String
-  staff      String
-  appDate    DateTime
-  appTime    String
-  status     String
-  amount     Int
-
-  customer Customer  @relation(fields: [customerId], references: [custId])
-  payments Payment[]
-
-  @@map("appointments")
-}
-
