@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const { emailId, phone, password } = await req.json();
 
-    // Try email login first, then phone
+    // Support login by email OR phone
     const where = emailId
       ? { emailId, password }
       : { phoneNo: phone, password };
