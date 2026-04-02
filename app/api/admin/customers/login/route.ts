@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find admin user
+    // Find customer by email
     const user = await prisma.customer.findUnique({
       where: { emailId },
     });
@@ -31,7 +31,6 @@ export async function POST(req: Request) {
 
     // Compare password
     const isValid = await bcrypt.compare(password, user.password);
-
     if (!isValid) {
       return NextResponse.json(
         { error: "Invalid password" },
@@ -40,18 +39,17 @@ export async function POST(req: Request) {
     }
 
     // Success — alias Prisma's `id` to `custId` in JSON
-   return NextResponse.json({
-  message: "Login successful",
-  custId: user.id,        // ✅ alias Prisma's id to custId
-  name: user.name,
-  emailId: user.emailId,
-  phoneNo: user.phoneNo,
-  role: user.role,        // ✅ include role since frontend uses it
-});
-
+    return NextResponse.json({
+      message: "Login successful",
+      custId: user.id,        // ✅ Prisma field is `id`, alias to custId
+      name: user.name,
+      emailId: user.emailId,
+      phoneNo: user.phoneNo,
+      role: user.role,        // ✅ include role for frontend redirects
+    });
 
   } catch (err) {
-    console.error("ADMIN LOGIN ERROR:", err);
+    console.error("CUSTOMER LOGIN ERROR:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
