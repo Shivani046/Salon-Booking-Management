@@ -40,11 +40,11 @@ export default function DashboardPage() {
     setAppointments(await res.json());
   };
   const loadServices = async () => {
-    const res = await fetch("/api/admin/services");
+    const res = await fetch("/api/services");
     setServices(await res.json());
   };
   const loadStaff = async () => {
-    const res = await fetch("/api/admin/staff");
+    const res = await fetch("/api/staff");
     setStaff(await res.json());
   };
 
@@ -76,7 +76,7 @@ export default function DashboardPage() {
   // ==== STAFF CRUD ====
   const addStaff = async () => {
     if (!newStaff) return;
-    await fetch("/api/admin/staff", {
+    await fetch("/api/staff", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ name: newStaff }),
