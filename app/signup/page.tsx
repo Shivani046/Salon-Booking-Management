@@ -139,6 +139,7 @@ export default function SignupPage() {
           {/* Form Section (Right) */}
           <form
             onSubmit={onSubmit}
+            autoComplete="on"
             className="md:w-3/5 w-full flex flex-col justify-center px-10 py-8 gap-3"
           >
             <h3 className="text-2xl font-bold mb-3 text-[#23181a]">Sign Up</h3>
@@ -146,6 +147,8 @@ export default function SignupPage() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                name="name"
+                autoComplete="name"
                 placeholder="Full Name"
                 className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
               />
@@ -156,6 +159,8 @@ export default function SignupPage() {
                   if (value.length > 10) value = value.slice(0, 10);
                   setPhoneNo(value);
                 }}
+                name="tel"
+                autoComplete="tel"
                 placeholder="Phone (10 digits)"
                 className={`border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1 ${
                   phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""
@@ -171,10 +176,11 @@ export default function SignupPage() {
             <input
               value={emailId}
               onChange={(e) => setEmailId(e.target.value)}
+              name="email"
+              autoComplete="username email"
               type="email"
               placeholder="Email"
               className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] mt-2"
-              autoComplete="email"
             />
             {/* Password */}
             <div className="flex items-center gap-2 mt-2">
@@ -182,9 +188,10 @@ export default function SignupPage() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                autoComplete="new-password"
                 placeholder="Password"
                 className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
-                autoComplete="new-password"
               />
               <button
                 type="button"

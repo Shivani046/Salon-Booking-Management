@@ -29,6 +29,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // You can use this if you need
 
   const initials = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -40,9 +41,11 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     if (!email.trim() || !password.trim()) {
       setError("Please enter email and password.");
+      setLoading(false);
       return;
     }
 
@@ -62,10 +65,10 @@ export default function LoginPage() {
         if (res.status === 404) setError("User not found.");
         else if (res.status === 401) setError("Incorrect password.");
         else setError(data?.error || "Login failed.");
+        setLoading(false);
         return;
       }
 
-      // STORE USER DATA
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("custId", String(data.custId));
       localStorage.setItem("profileName", data.name);
@@ -80,7 +83,6 @@ export default function LoginPage() {
 
       setLoggedIn(true);
 
-      // Redirect according to role
       if (data.role === "admin") {
         router.push("/admin/dashboard");
       } else {
@@ -89,6 +91,8 @@ export default function LoginPage() {
 
     } catch {
       setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -131,6 +135,7 @@ export default function LoginPage() {
           {/* Login Form Section */}
           <form
             onSubmit={onSubmit}
+            autoComplete="on" // <-- IMPORTANT!
             className="md:w-3/5 w-full flex flex-col justify-center px-10 py-8 gap-3 bg-[#fff7ef]/80"
           >
             <h3 className="text-2xl font-bold mb-2 text-[#23181a]">Sign In</h3>
@@ -139,18 +144,20 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
+              name="email" // <-- IMPORTANT!
+              autoComplete="username email" // <-- IMPORTANT!
               placeholder="Email"
               className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] mb-2"
-              autoComplete="email"
             />
             <div className="flex items-center gap-2 mb-2">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                name="password" // <-- IMPORTANT!
+                autoComplete="current-password" // <-- IMPORTANT!
                 placeholder="Password"
                 className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
-                autoComplete="current-password"
               />
               <button
                 type="button"
