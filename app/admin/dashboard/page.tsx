@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaPen, FaTrash, FaSignOutAlt, FaUsers, FaCog, FaCalendarDay, FaRupeeSign, FaPlus } from "react-icons/fa";
+import {
+  FaPen,
+  FaTrash,
+  FaSignOutAlt,
+  FaUsers,
+  FaCog,
+  FaCalendarDay,
+  FaRupeeSign,
+  FaPlus,
+  FaSortAlphaDown,
+  FaSortAlphaUp,
+} from "react-icons/fa";
 
 // Sapphire palette
 const PALETTE = {
@@ -9,7 +20,7 @@ const PALETTE = {
   royalBlue: "#112E50",
   quicksand: "#E0C58F",
   swanWing: "#F5F0E9",
-  shellstone: "#D9CBC2"
+  shellstone: "#D9CBC2",
 };
 
 export default function DashboardPage() {
@@ -17,8 +28,9 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  // Sorting state for services
+  // Sorting state for services and staff
   const [serviceSort, setServiceSort] = useState<"az" | "za">("az");
+  const [staffSort, setStaffSort] = useState<"az" | "za">("az");
 
   // Service form state
   const [newService, setNewService] = useState("");
@@ -30,11 +42,21 @@ export default function DashboardPage() {
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
 
   // Quick Add Appointment (stub logic)
-  const [quickApp, setQuickApp] = useState({ date: "", serviceId: "", staffId: "", customer: "", amount: "" });
+  const [quickApp, setQuickApp] = useState({
+    date: "",
+    serviceId: "",
+    staffId: "",
+    customer: "",
+    amount: "",
+  });
   const [quickAddMsg, setQuickAddMsg] = useState("");
 
-  useEffect(() => { loadAll(); }, []);
-  const loadAll = async () => { await Promise.all([loadAppointments(), loadServices(), loadStaff()]); };
+  useEffect(() => {
+    loadAll();
+  }, []);
+  const loadAll = async () => {
+    await Promise.all([loadAppointments(), loadServices(), loadStaff()]);
+  };
 
   const loadAppointments = async () => {
     const res = await fetch("/api/appointments");
@@ -54,20 +76,26 @@ export default function DashboardPage() {
     if (!newService || !newPrice) return;
     await fetch("/api/services", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: newService, price: Number(newPrice) }),
     });
-    setNewService(""); setNewPrice(""); loadServices();
+    setNewService("");
+    setNewPrice("");
+    loadServices();
   };
   const startEditService = (svc: any) => setEditingService({ ...svc });
   const updateService = async () => {
     if (!editingService.type || !editingService.price) return;
     await fetch(`/api/services?id=${editingService.serviceId}`, {
       method: "PUT",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ type: editingService.type, price: Number(editingService.price) }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: editingService.type,
+        price: Number(editingService.price),
+      }),
     });
-    setEditingService(null); loadServices();
+    setEditingService(null);
+    loadServices();
   };
   const deleteService = async (id: number) => {
     await fetch(`/api/services?id=${id}`, { method: "DELETE" });
@@ -79,20 +107,22 @@ export default function DashboardPage() {
     if (!newStaff) return;
     await fetch("/api/staff", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newStaff }),
     });
-    setNewStaff(""); loadStaff();
+    setNewStaff("");
+    loadStaff();
   };
   const startEditStaff = (person: any) => setEditingStaff({ ...person });
   const updateStaff = async () => {
     if (!editingStaff.name) return;
     await fetch(`/api/staff?id=${editingStaff.staffId}`, {
       method: "PUT",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editingStaff.name }),
     });
-    setEditingStaff(null); loadStaff();
+    setEditingStaff(null);
+    loadStaff();
   };
   const deleteStaff = async (id: number) => {
     await fetch(`/api/staff?id=${id}`, { method: "DELETE" });
@@ -107,58 +137,82 @@ export default function DashboardPage() {
 
   // ==== ANALYTICS ====
   const today = new Date().toISOString().slice(0, 10);
-  const appointmentsToday = appointments.filter(a => a.appDate && a.appDate.slice(0, 10) === today);
-  const revenue = appointments.reduce((sum, a) => sum + (a.amount ? Number(a.amount) : 0), 0);
+  const appointmentsToday = appointments.filter(
+    (a) => a.appDate && a.appDate.slice(0, 10) === today
+  );
+  const revenue = appointments.reduce(
+    (sum, a) => sum + (a.amount ? Number(a.amount) : 0),
+    0
+  );
 
   const analytics = [
     {
-      icon: <FaCalendarDay size={28}/>,
+      icon: <FaCalendarDay size={28} />,
       label: "Appointments Today",
       count: appointmentsToday.length,
       color: PALETTE.royalBlue,
-      bg: PALETTE.swanWing
+      bg: PALETTE.swanWing,
     },
     {
-      icon: <FaRupeeSign size={28}/>,
+      icon: <FaRupeeSign size={28} />,
       label: "Total Revenue",
       count: `₹${revenue}`,
       color: PALETTE.sapphire,
-      bg: PALETTE.quicksand
+      bg: PALETTE.quicksand,
     },
     {
-      icon: <FaUsers size={28}/>,
+      icon: <FaUsers size={28} />,
       label: "Active Staff",
       count: staff.length,
       color: PALETTE.royalBlue,
-      bg: PALETTE.shellstone
-    }
+      bg: PALETTE.shellstone,
+    },
   ];
 
-  // ==== SORTED SERVICES ====
-  const sortedServices =
-    [...services].sort((a, b) =>
-      serviceSort === "az"
-        ? a.type.localeCompare(b.type)
-        : b.type.localeCompare(a.type)
-    );
+  // ==== SORTED SERVICES & STAFF ====
+  const sortedServices = [...services].sort((a, b) =>
+    serviceSort === "az"
+      ? a.type.localeCompare(b.type)
+      : b.type.localeCompare(a.type)
+  );
+  const sortedStaff = [...staff].sort((a, b) =>
+    staffSort === "az"
+      ? a.name.localeCompare(b.name)
+      : b.name.localeCompare(a.name)
+  );
 
   return (
-    <div className="min-h-screen w-full" style={{ background: PALETTE.swanWing }}>
+    <div
+      className="min-h-screen w-full"
+      style={{ background: PALETTE.swanWing }}
+    >
       {/* HEADER BAR */}
-      <div className="flex items-center justify-between px-8 py-6" style={{ background: PALETTE.sapphire }}>
+      <div
+        className="flex items-center justify-between px-8 py-6"
+        style={{ background: PALETTE.sapphire }}
+      >
         <div className="flex items-center gap-3">
           <FaCog style={{ color: PALETTE.swanWing, fontSize: "28px" }} />
-          <span className="text-2xl font-extrabold" style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}>
+          <span
+            className="text-2xl font-extrabold"
+            style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}
+          >
             Salon Admin
           </span>
-          <span className="text-sm" style={{ color: "#b6bed1" }}>Business Dashboard</span>
+          <span className="text-sm" style={{ color: "#b6bed1" }}>
+            Business Dashboard
+          </span>
         </div>
         <button
           onClick={logout}
           className="flex items-center gap-2 text-white"
           style={{
-            background: PALETTE.royalBlue, padding: "10px 25px", borderRadius: "10px",
-            fontWeight: "bold", letterSpacing: "0.04em", boxShadow: "0 2px 6px #112E5070"
+            background: PALETTE.royalBlue,
+            padding: "10px 25px",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            letterSpacing: "0.04em",
+            boxShadow: "0 2px 6px #112E5070",
           }}
         >
           <FaSignOutAlt /> Logout
@@ -174,8 +228,17 @@ export default function DashboardPage() {
             className={`px-7 py-2 rounded-full font-semibold tracking-wide border transition`}
             style={
               tab === t
-                ? { background: PALETTE.sapphire, color: PALETTE.swanWing, borderColor: PALETTE.sapphire, boxShadow: "0 1px 6px #3C507D50" }
-                : { background: PALETTE.shellstone, color: PALETTE.royalBlue, borderColor: PALETTE.royalBlue }
+                ? {
+                    background: PALETTE.sapphire,
+                    color: PALETTE.swanWing,
+                    borderColor: PALETTE.sapphire,
+                    boxShadow: "0 1px 6px #3C507D50",
+                  }
+                : {
+                    background: PALETTE.shellstone,
+                    color: PALETTE.royalBlue,
+                    borderColor: PALETTE.royalBlue,
+                  }
             }
           >
             {t[0].toUpperCase() + t.slice(1)}
@@ -193,21 +256,35 @@ export default function DashboardPage() {
                 key={a.label}
                 className="rounded-2xl flex-1 min-w-[210px] max-w-[320px] p-7 shadow-md flex gap-4 items-center border-l-[7px]"
                 style={{
-                  borderColor: a.color, background: a.bg,
-                  borderLeftWidth: 7, borderStyle: "solid"
+                  borderColor: a.color,
+                  background: a.bg,
+                  borderLeftWidth: 7,
+                  borderStyle: "solid",
                 }}
               >
-                <div className="rounded-full p-4" style={{ background: "#f1eedf", color: a.color }}>{a.icon}</div>
+                <div
+                  className="rounded-full p-4"
+                  style={{ background: "#f1eedf", color: a.color }}
+                >
+                  {a.icon}
+                </div>
                 <div>
-                  <div className="text-4xl font-extrabold" style={{ color: a.color }}>{a.count}</div>
-                  <div className="font-semibold mt-1" style={{ color: PALETTE.royalBlue }}>{a.label}</div>
+                  <div className="text-4xl font-extrabold" style={{ color: a.color }}>
+                    {a.count}
+                  </div>
+                  <div className="font-semibold mt-1" style={{ color: PALETTE.royalBlue }}>
+                    {a.label}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
           {/* Today’s Appointments */}
           <div className="mt-12 px-10">
-            <h2 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: PALETTE.royalBlue }}>
+            <h2
+              className="text-xl font-bold mb-3 flex items-center gap-2"
+              style={{ color: PALETTE.royalBlue }}
+            >
               <FaCalendarDay /> Today's Appointments
             </h2>
             <div
@@ -216,7 +293,10 @@ export default function DashboardPage() {
             >
               <table className="w-full text-base">
                 <thead>
-                  <tr className="border-b" style={{ color: PALETTE.royalBlue, background: PALETTE.shellstone }}>
+                  <tr
+                    className="border-b"
+                    style={{ color: PALETTE.royalBlue, background: PALETTE.shellstone }}
+                  >
                     <th className="py-3 text-left">Time</th>
                     <th className="text-left">Service</th>
                     <th className="text-left">Staff</th>
@@ -227,13 +307,21 @@ export default function DashboardPage() {
                 <tbody>
                   {appointmentsToday.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center" style={{ color: PALETTE.royalBlue + "77" }}>
+                      <td
+                        colSpan={5}
+                        className="py-8 text-center"
+                        style={{ color: PALETTE.royalBlue + "77" }}
+                      >
                         No appointments today
                       </td>
                     </tr>
                   ) : (
                     appointmentsToday.map((a) => (
-                      <tr key={a.appId} className="border-b hover:opacity-90" style={{ borderColor: PALETTE.shellstone }}>
+                      <tr
+                        key={a.appId}
+                        className="border-b hover:opacity-90"
+                        style={{ borderColor: PALETTE.shellstone }}
+                      >
                         <td className="py-3">{a.appTime || "--"}</td>
                         <td>{a.service?.type || ""}</td>
                         <td>{a.staff?.name || "-"}</td>
@@ -248,53 +336,138 @@ export default function DashboardPage() {
           </div>
           {/* Quick Add Appointment (UI only demo) */}
           <div className="mt-10 px-10 flex flex-col md:flex-row gap-8">
-            <div className="rounded-xl p-6 border flex-1 shadow" style={{ background: PALETTE.quicksand, borderColor: PALETTE.shellstone }}>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: PALETTE.royalBlue }}>
+            <div
+              className="rounded-xl p-6 border flex-1 shadow"
+              style={{ background: PALETTE.quicksand, borderColor: PALETTE.shellstone }}
+            >
+              <h3
+                className="text-lg font-semibold mb-4 flex items-center gap-2"
+                style={{ color: PALETTE.royalBlue }}
+              >
                 <FaPlus /> Quick Add Appointment
               </h3>
               <div className="grid gap-2 grid-cols-1 md:grid-cols-3">
-                <input className="border rounded-lg px-3 py-2" type="date" value={quickApp.date}
-                  onChange={e => setQuickApp(q => ({ ...q, date: e.target.value }))} />
-                <select className="border rounded-lg px-3 py-2" value={quickApp.serviceId}
-                  onChange={e => setQuickApp(q => ({ ...q, serviceId: e.target.value }))}>
+                <input
+                  className="border rounded-lg px-3 py-2"
+                  type="date"
+                  value={quickApp.date}
+                  onChange={(e) =>
+                    setQuickApp((q) => ({ ...q, date: e.target.value }))
+                  }
+                />
+                <select
+                  className="border rounded-lg px-3 py-2"
+                  value={quickApp.serviceId}
+                  onChange={(e) =>
+                    setQuickApp((q) => ({ ...q, serviceId: e.target.value }))
+                  }
+                >
                   <option value="">Select Service</option>
-                  {services.map(s => <option value={s.serviceId} key={s.serviceId}>{s.type}</option>)}
+                  {services.map((s) => (
+                    <option value={s.serviceId} key={s.serviceId}>
+                      {s.type}
+                    </option>
+                  ))}
                 </select>
-                <select className="border rounded-lg px-3 py-2" value={quickApp.staffId}
-                  onChange={e => setQuickApp(q => ({ ...q, staffId: e.target.value }))}>
+                <select
+                  className="border rounded-lg px-3 py-2"
+                  value={quickApp.staffId}
+                  onChange={(e) =>
+                    setQuickApp((q) => ({ ...q, staffId: e.target.value }))
+                  }
+                >
                   <option value="">Assign Staff</option>
-                  {staff.map(s => <option value={s.staffId} key={s.staffId}>{s.name}</option>)}
+                  {staff.map((s) => (
+                    <option value={s.staffId} key={s.staffId}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
-                <input className="border rounded-lg px-3 py-2 col-span-1 md:col-span-2" placeholder="Customer name"
-                  value={quickApp.customer} onChange={e => setQuickApp(q => ({ ...q, customer: e.target.value }))} />
-                <input className="border rounded-lg px-3 py-2" placeholder="Amount"
-                  value={quickApp.amount} type="number"
-                  onChange={e => setQuickApp(q => ({ ...q, amount: e.target.value }))} />
+                <input
+                  className="border rounded-lg px-3 py-2 col-span-1 md:col-span-2"
+                  placeholder="Customer name"
+                  value={quickApp.customer}
+                  onChange={(e) =>
+                    setQuickApp((q) => ({ ...q, customer: e.target.value }))
+                  }
+                />
+                <input
+                  className="border rounded-lg px-3 py-2"
+                  placeholder="Amount"
+                  value={quickApp.amount}
+                  type="number"
+                  onChange={(e) =>
+                    setQuickApp((q) => ({ ...q, amount: e.target.value }))
+                  }
+                />
               </div>
-              {quickAddMsg && <div style={{ color: PALETTE.royalBlue, marginTop: 8 }}>{quickAddMsg}</div>}
+              {quickAddMsg && (
+                <div style={{ color: PALETTE.royalBlue, marginTop: 8 }}>
+                  {quickAddMsg}
+                </div>
+              )}
               <button
                 className="mt-4 flex items-center gap-2 px-5 py-2 rounded-lg font-semibold hover:opacity-85"
                 style={{ background: PALETTE.sapphire, color: PALETTE.swanWing }}
                 onClick={() => {
                   setQuickAddMsg("Demo: Appointment would be added!");
                   setTimeout(() => setQuickAddMsg(""), 1500);
-                  setQuickApp({ date: "", serviceId: "", staffId: "", customer: "", amount: "" });
+                  setQuickApp({
+                    date: "",
+                    serviceId: "",
+                    staffId: "",
+                    customer: "",
+                    amount: "",
+                  });
                 }}
               >
                 <FaPlus /> Add
               </button>
             </div>
             {/* Staff at a glance */}
-            <div className="flex-1 rounded-xl p-6 border shadow min-w-[260px]" style={{ background: PALETTE.swanWing, borderColor: PALETTE.shellstone }}>
-              <h4 className="font-semibold mb-3 flex items-center gap-2" style={{ color: PALETTE.royalBlue }}>
-                <FaUsers /> Staff
-              </h4>
+            <div
+              className="flex-1 rounded-xl p-6 border shadow min-w-[260px]"
+              style={{
+                background: PALETTE.swanWing,
+                borderColor: PALETTE.shellstone,
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h4
+                  className="font-semibold flex items-center gap-2 text-base"
+                  style={{ color: PALETTE.royalBlue }}
+                >
+                  <FaUsers /> Staff
+                </h4>
+                <button
+                  title="Sort staff"
+                  onClick={() =>
+                    setStaffSort((prev) => (prev === "az" ? "za" : "az"))
+                  }
+                  className="pl-1 pr-2 py-1 bg-white rounded hover:bg-[#eee] border transition flex items-center gap-1"
+                  style={{ color: PALETTE.royalBlue }}
+                >
+                  {staffSort === "az" ? (
+                    <>
+                      <FaSortAlphaDown className="text-lg" /> A-Z
+                    </>
+                  ) : (
+                    <>
+                      <FaSortAlphaUp className="text-lg" /> Z-A
+                    </>
+                  )}
+                </button>
+              </div>
               <ul>
-                {staff.length === 0 && (
+                {sortedStaff.length === 0 && (
                   <li style={{ color: PALETTE.sapphire }}>No staff</li>
                 )}
-                {staff.map((s) => (
-                  <li key={s.staffId} className="py-1 border-b last:border-0" style={{ borderColor: PALETTE.shellstone }}>
+                {sortedStaff.map((s) => (
+                  <li
+                    key={s.staffId}
+                    className="py-1 border-b last:border-0"
+                    style={{ borderColor: PALETTE.shellstone }}
+                  >
                     {s.name}
                   </li>
                 ))}
@@ -310,10 +483,20 @@ export default function DashboardPage() {
           className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
           style={{ background: PALETTE.swanWing, borderColor: PALETTE.shellstone }}
         >
-          <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>All Appointments</h2>
+          <h2
+            className="font-semibold text-lg mb-5"
+            style={{ color: PALETTE.royalBlue }}
+          >
+            All Appointments
+          </h2>
           <table className="w-full text-base">
             <thead>
-              <tr style={{ background: PALETTE.shellstone, color: PALETTE.royalBlue }}>
+              <tr
+                style={{
+                  background: PALETTE.shellstone,
+                  color: PALETTE.royalBlue,
+                }}
+              >
                 <th className="py-3 text-left">Date</th>
                 <th className="text-left">Service</th>
                 <th className="text-left">Staff</th>
@@ -324,14 +507,24 @@ export default function DashboardPage() {
             <tbody>
               {appointments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center" style={{ color: PALETTE.royalBlue + "77" }}>
+                  <td
+                    colSpan={5}
+                    className="py-10 text-center"
+                    style={{ color: PALETTE.royalBlue + "77" }}
+                  >
                     No appointments found
                   </td>
                 </tr>
               ) : (
                 appointments.map((a) => (
-                  <tr key={a.appId} className="border-b hover:bg-[#e9e5df]" style={{ borderColor: PALETTE.shellstone }}>
-                    <td className="py-3">{new Date(a.appDate).toLocaleDateString()}</td>
+                  <tr
+                    key={a.appId}
+                    className="border-b hover:bg-[#e9e5df]"
+                    style={{ borderColor: PALETTE.shellstone }}
+                  >
+                    <td className="py-3">
+                      {a.appDate ? new Date(a.appDate).toLocaleDateString() : "-"}
+                    </td>
                     <td>{a.service?.type || ""}</td>
                     <td>{a.staff?.name || "-"}</td>
                     <td>{a.customer?.name || "-"}</td>
@@ -350,20 +543,40 @@ export default function DashboardPage() {
           className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
           style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}
         >
-          <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>Services</h2>
+          <h2
+            className="font-semibold text-lg mb-5"
+            style={{ color: PALETTE.royalBlue }}
+          >
+            Services
+          </h2>
           {/* FILTER/SORT BUTTONS */}
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-medium text-sm" style={{color:PALETTE.royalBlue}}>Sort by:</span>
+            <span
+              className="font-medium text-sm"
+              style={{ color: PALETTE.royalBlue }}
+            >
+              Sort by:
+            </span>
             <button
               onClick={() => setServiceSort("az")}
-              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${serviceSort === "az" ? "bg-[#3C507D] text-white" : "bg-white text-[#3C507D] border-[#3C507D]"} hover:bg-[#3C507D]/10`}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${
+                serviceSort === "az"
+                  ? "bg-[#3C507D] text-white"
+                  : "bg-white text-[#3C507D] border-[#3C507D]"
+              } hover:bg-[#3C507D]/10`}
             >
+              <FaSortAlphaDown className="inline mr-1" />
               A-Z
             </button>
             <button
               onClick={() => setServiceSort("za")}
-              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${serviceSort === "za" ? "bg-[#3C507D] text-white" : "bg-white text-[#3C507D] border-[#3C507D]"} hover:bg-[#3C507D]/10`}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${
+                serviceSort === "za"
+                  ? "bg-[#3C507D] text-white"
+                  : "bg-white text-[#3C507D] border-[#3C507D]"
+              } hover:bg-[#3C507D]/10`}
             >
+              <FaSortAlphaUp className="inline mr-1" />
               Z-A
             </button>
           </div>
@@ -373,7 +586,7 @@ export default function DashboardPage() {
               className="border rounded-lg px-3 py-2 w-1/3"
               placeholder="Service name"
               value={newService}
-              onChange={e => setNewService(e.target.value)}
+              onChange={(e) => setNewService(e.target.value)}
               style={{ borderColor: PALETTE.royalBlue }}
             />
             <input
@@ -381,7 +594,7 @@ export default function DashboardPage() {
               placeholder="Price"
               type="number"
               value={newPrice}
-              onChange={e => setNewPrice(e.target.value)}
+              onChange={(e) => setNewPrice(e.target.value)}
               style={{ borderColor: PALETTE.royalBlue }}
             />
             <button
@@ -395,14 +608,30 @@ export default function DashboardPage() {
           {/* EDIT MODAL */}
           {editingService && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-              <div className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2" style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}>
+              <div
+                className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2"
+                style={{
+                  background: PALETTE.shellstone,
+                  borderColor: PALETTE.royalBlue,
+                }}
+              >
                 {/* Modal content */}
-                <h3 className="font-bold text-lg mb-4" style={{ color: PALETTE.royalBlue }}>Edit Service</h3>
+                <h3
+                  className="font-bold text-lg mb-4"
+                  style={{ color: PALETTE.royalBlue }}
+                >
+                  Edit Service
+                </h3>
                 <input
                   className="border rounded-lg px-3 py-2 w-full mb-3"
                   placeholder="Service name"
                   value={editingService.type}
-                  onChange={e => setEditingService((s: any) => ({ ...s, type: e.target.value }))}
+                  onChange={(e) =>
+                    setEditingService((s: any) => ({
+                      ...s,
+                      type: e.target.value,
+                    }))
+                  }
                   style={{ borderColor: PALETTE.royalBlue }}
                 />
                 <input
@@ -410,21 +639,32 @@ export default function DashboardPage() {
                   placeholder="Price"
                   type="number"
                   value={editingService.price}
-                  onChange={e => setEditingService((s: any) => ({ ...s, price: e.target.value }))}
+                  onChange={(e) =>
+                    setEditingService((s: any) => ({
+                      ...s,
+                      price: e.target.value,
+                    }))
+                  }
                   style={{ borderColor: PALETTE.royalBlue }}
                 />
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() => setEditingService(null)}
                     className="px-4 py-2 rounded font-medium hover:opacity-80"
-                    style={{ background: PALETTE.swanWing, color: PALETTE.royalBlue }}
+                    style={{
+                      background: PALETTE.swanWing,
+                      color: PALETTE.royalBlue,
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={updateService}
                     className="px-4 py-2 rounded font-semibold hover:opacity-90"
-                    style={{ background: PALETTE.sapphire, color: PALETTE.swanWing }}
+                    style={{
+                      background: PALETTE.sapphire,
+                      color: PALETTE.swanWing,
+                    }}
                   >
                     Save
                   </button>
@@ -435,7 +675,12 @@ export default function DashboardPage() {
           {/* TABLE */}
           <table className="w-full text-base">
             <thead>
-              <tr style={{ background: PALETTE.swanWing, color: PALETTE.royalBlue }}>
+              <tr
+                style={{
+                  background: PALETTE.swanWing,
+                  color: PALETTE.royalBlue,
+                }}
+              >
                 <th className="py-3 text-left">Service</th>
                 <th className="text-left">Price</th>
                 <th className="text-left">Actions</th>
@@ -443,7 +688,11 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {sortedServices.map((s) => (
-                <tr key={s.serviceId} className="border-b hover:bg-[#e9e5df]" style={{ borderColor: PALETTE.royalBlue }}>
+                <tr
+                  key={s.serviceId}
+                  className="border-b hover:bg-[#e9e5df]"
+                  style={{ borderColor: PALETTE.royalBlue }}
+                >
                   <td className="py-3">{s.type}</td>
                   <td>₹{s.price}</td>
                   <td>
@@ -477,13 +726,35 @@ export default function DashboardPage() {
           className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
           style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}
         >
-          <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>Staff</h2>
+          <h2
+            className="font-semibold text-lg mb-5 flex items-center gap-2"
+            style={{ color: PALETTE.royalBlue }}
+          >
+            Staff
+            <button
+              title="Sort staff"
+              onClick={() =>
+                setStaffSort((prev) => (prev === "az" ? "za" : "az"))
+              }
+              className="ml-2 px-2 py-1 bg-white rounded hover:bg-[#eee] border transition flex items-center gap-1 text-[#3C507D]"
+            >
+              {staffSort === "az" ? (
+                <>
+                  <FaSortAlphaDown className="text-lg" /> A-Z
+                </>
+              ) : (
+                <>
+                  <FaSortAlphaUp className="text-lg" /> Z-A
+                </>
+              )}
+            </button>
+          </h2>
           <div className="flex gap-3 mb-7">
             <input
               className="border rounded-lg px-3 py-2 w-1/3"
               placeholder="Staff name"
               value={newStaff}
-              onChange={e => setNewStaff(e.target.value)}
+              onChange={(e) => setNewStaff(e.target.value)}
               style={{ borderColor: PALETTE.royalBlue }}
             />
             <button
@@ -497,27 +768,49 @@ export default function DashboardPage() {
           {/* EDIT MODAL */}
           {editingStaff && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-              <div className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2" style={{ background: PALETTE.swanWing, borderColor: PALETTE.royalBlue }}>
-                <h3 className="font-bold text-lg mb-4" style={{ color: PALETTE.royalBlue }}>Edit Staff</h3>
+              <div
+                className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2"
+                style={{
+                  background: PALETTE.swanWing,
+                  borderColor: PALETTE.royalBlue,
+                }}
+              >
+                <h3
+                  className="font-bold text-lg mb-4"
+                  style={{ color: PALETTE.royalBlue }}
+                >
+                  Edit Staff
+                </h3>
                 <input
                   className="border rounded-lg px-3 py-2 w-full mb-5"
                   placeholder="Staff name"
                   value={editingStaff.name}
-                  onChange={e => setEditingStaff((s: any) => ({ ...s, name: e.target.value }))}
+                  onChange={(e) =>
+                    setEditingStaff((s: any) => ({
+                      ...s,
+                      name: e.target.value,
+                    }))
+                  }
                   style={{ borderColor: PALETTE.royalBlue }}
                 />
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() => setEditingStaff(null)}
                     className="px-4 py-2 rounded font-medium hover:opacity-80"
-                    style={{ background: PALETTE.royalBlue + "22", color: PALETTE.royalBlue }}
+                    style={{
+                      background: PALETTE.royalBlue + "22",
+                      color: PALETTE.royalBlue,
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={updateStaff}
                     className="px-4 py-2 rounded font-semibold hover:opacity-90"
-                    style={{ background: PALETTE.sapphire, color: PALETTE.swanWing }}
+                    style={{
+                      background: PALETTE.sapphire,
+                      color: PALETTE.swanWing,
+                    }}
                   >
                     Save
                   </button>
@@ -528,14 +821,23 @@ export default function DashboardPage() {
           {/* TABLE */}
           <table className="w-full text-base">
             <thead>
-              <tr style={{ background: PALETTE.swanWing, color: PALETTE.royalBlue }}>
+              <tr
+                style={{
+                  background: PALETTE.swanWing,
+                  color: PALETTE.royalBlue,
+                }}
+              >
                 <th className="py-3 text-left">Name</th>
                 <th className="text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {staff.map((s) => (
-                <tr key={s.staffId} className="border-b hover:bg-[#e9e5df]" style={{ borderColor: PALETTE.royalBlue }}>
+              {sortedStaff.map((s) => (
+                <tr
+                  key={s.staffId}
+                  className="border-b hover:bg-[#e9e5df]"
+                  style={{ borderColor: PALETTE.royalBlue }}
+                >
                   <td className="py-3">{s.name}</td>
                   <td>
                     <button

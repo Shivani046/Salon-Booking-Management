@@ -123,7 +123,7 @@ export default function SignupPage() {
 
       {/* Modal Overlay for Form */}
       <ModalOverlay>
-        <div className="w-full max-w-3xl bg-white rounded-3xl flex flex-col md:flex-row items-stretch shadow-2xl border border-[#eadcc6] overflow-hidden relative">
+        <div className="w-full max-w-xl bg-white rounded-3xl flex flex-col md:flex-row items-stretch shadow-2xl border border-[#eadcc6] overflow-hidden relative">
           {/* CLOSE BUTTON */}
           <button
             type="button"
@@ -135,12 +135,12 @@ export default function SignupPage() {
             <FaTimes className="text-xl text-[#cb7885]" />
           </button>
           {/* Profile Visual Section (Left) */}
-          <div className="md:w-2/5 flex flex-col items-center justify-center bg-[#f7ecd8] p-10 md:rounded-l-3xl">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#cb7885]/10 flex items-center justify-center text-5xl font-bold shadow-inner border-2 border-[#eadcd1] mb-8">
+          <div className="md:w-1/2 flex flex-col items-center justify-center bg-[#f7ecd8] p-8 md:rounded-l-3xl">
+            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-[#cb7885]/10 flex items-center justify-center text-4xl font-bold shadow-inner border-2 border-[#eadcd1] mb-6">
               {initials}
             </div>
-            <h2 className="text-xl font-semibold tracking-wide mb-2 text-[#cb7885]">Welcome!</h2>
-            <p className="text-sm text-gray-500 text-center">
+            <h2 className="text-lg font-semibold tracking-wide mb-2 text-[#cb7885]">Welcome!</h2>
+            <p className="text-xs text-gray-500 text-center">
               Create your account below to begin booking your beauty experience.
             </p>
           </div>
@@ -148,17 +148,17 @@ export default function SignupPage() {
           <form
             onSubmit={onSubmit}
             autoComplete="on"
-            className="md:w-3/5 w-full flex flex-col justify-center px-10 py-8 gap-3"
+            className="md:w-1/2 w-full flex flex-col justify-center px-8 py-6 gap-3"
           >
             <h3 className="text-2xl font-bold mb-3 text-[#23181a]">Sign Up</h3>
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-3">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 name="name"
                 autoComplete="name"
                 placeholder="Full Name"
-                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
+                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-base focus:border-[#cb7885] flex-1"
               />
               <input
                 value={phoneNo}
@@ -170,7 +170,7 @@ export default function SignupPage() {
                 name="tel"
                 autoComplete="tel"
                 placeholder="Phone (10 digits)"
-                className={`border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1 ${
+                className={`border border-[#e8bcb9] px-4 py-2 rounded-xl text-base focus:border-[#cb7885] flex-1 ${
                   phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""
                 }`}
                 maxLength={10}
@@ -188,7 +188,7 @@ export default function SignupPage() {
               autoComplete="username email"
               type="email"
               placeholder="Email"
-              className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] mt-2"
+              className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-base focus:border-[#cb7885] mt-2"
             />
             {/* Password */}
             <div className="flex items-center gap-2 mt-2">
@@ -199,7 +199,7 @@ export default function SignupPage() {
                 name="password"
                 autoComplete="new-password"
                 placeholder="Password"
-                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-lg focus:border-[#cb7885] flex-1"
+                className="border border-[#e8bcb9] px-4 py-2 rounded-xl text-base focus:border-[#cb7885] flex-1"
               />
               <button
                 type="button"

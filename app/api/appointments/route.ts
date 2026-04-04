@@ -26,6 +26,9 @@ export async function GET(req: Request) {
     select: {
       appId: true,
       customerId: true,
+      customer: {   // <-- Include this for customer name!
+        select: { name: true }
+      },
       service: {
         select: {
           serviceId: true,
