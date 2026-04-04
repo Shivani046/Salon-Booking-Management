@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 
 export default function SignupPage() {
@@ -85,9 +85,9 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a] overflow-hidden relative">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a] relative overflow-hidden">
       {/* Navbar */}
-      <header className="absolute top-0 left-0 w-full bg-[#cb7885] shadow z-50">
+      <header className="sticky top-0 left-0 w-full bg-[#cb7885] shadow z-50">
         <nav className="flex items-center justify-between px-8 py-4">
           <Link href="/" className="text-lg font-semibold">
             ERAILE BEAUTY
@@ -107,138 +107,153 @@ export default function SignupPage() {
         </nav>
       </header>
 
-      {/* Centered Signup Card */}
-      <div className="relative bg-white p-10 md:p-12 rounded-3xl shadow-2xl border border-[#eadcc6] w-full max-w-md flex flex-col items-center">
-        {/* Close Button */}
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={() => router.push("/")}
-          className="absolute top-4 right-4 z-10 rounded-full hover:bg-[#f7ecd8] bg-white border shadow p-2 transition"
-          tabIndex={0}
-        >
-          <FaTimes className="text-xl text-[#cb7885]" />
-        </button>
-        <h3 className="text-3xl font-bold mb-2 mt-2 text-[#23181a] text-center">Sign Up</h3>
-        <p className="mb-4 text-gray-600 text-center">Create your account to book your beauty experience.</p>
-        <form
-          onSubmit={onSubmit}
-          autoComplete="on"
-          className="w-full flex flex-col gap-2"
-        >
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            name="name"
-            autoComplete="name"
-            placeholder="Full Name"
-            className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
-          />
-          <input
-            value={phoneNo}
-            onChange={(e) => {
-              let value = e.target.value.replace(/\D/g, "");
-              if (value.length > 10) value = value.slice(0, 10);
-              setPhoneNo(value);
-            }}
-            name="tel"
-            autoComplete="tel"
-            placeholder="Phone (10 digits)"
-            className={`border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full ${
-              phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""
-            }`}
-            maxLength={10}
-            pattern="\d{10}"
-            inputMode="numeric"
-          />
-          {phoneMessage && (
-            <span className="text-xs text-red-500">{phoneMessage}</span>
-          )}
-          <input
-            value={emailId}
-            onChange={(e) => setEmailId(e.target.value)}
-            name="email"
-            autoComplete="username email"
-            type="email"
-            placeholder="Email"
-            className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              name="password"
-              autoComplete="new-password"
-              placeholder="Password"
-              className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
-            />
+      {/* Signup Card Row, below navbar */}
+      <div className="flex justify-center mt-16 md:mt-28 px-2">
+        <div className="relative bg-white rounded-3xl shadow-2xl border border-[#eadcc6] w-full max-w-3xl flex flex-col md:flex-row items-stretch overflow-hidden">
+          
+          {/* Left/Welcome Side */}
+          <div className="md:w-[45%] flex flex-col justify-center items-center bg-[#f7ecd8] p-10 md:rounded-l-3xl min-w-[240px]">
+            <h2 className="text-3xl font-bold tracking-wide mb-3 text-[#cb7885] text-center">
+              Welcome!
+            </h2>
+            <p className="text-base text-gray-600 text-center max-w-xs">
+              Create your account<br />and begin booking your beauty experience.
+            </p>
+          </div>
+
+          {/* Right/Form Side */}
+          <form
+            onSubmit={onSubmit}
+            autoComplete="on"
+            className="md:w-[55%] w-full flex flex-col justify-center px-8 py-10 gap-2"
+          >
+            {/* Close Button */}
             <button
               type="button"
-              onClick={() => setShowPassword((p) => !p)}
-              className="px-3 py-2 bg-gray-100 rounded-lg border text-xs"
-              tabIndex={-1}
+              aria-label="Close"
+              onClick={() => router.push("/")}
+              className="absolute top-4 right-4 z-10 rounded-full hover:bg-[#f7ecd8] bg-white border shadow p-2 transition"
+              tabIndex={0}
             >
-              {showPassword ? "Hide" : "Show"}
+              <FaTimes className="text-xl text-[#cb7885]" />
             </button>
-          </div>
-          {/* Password Rules */}
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mt-2 mb-1">
-            <p className={rules.length ? "text-green-600" : "text-red-500"}>
-              • At least 8 characters
-            </p>
-            <p className={rules.upper ? "text-green-600" : "text-red-500"}>
-              • Uppercase letter
-            </p>
-            <p className={rules.lower ? "text-green-600" : "text-red-500"}>
-              • Lowercase letter
-            </p>
-            <p className={rules.number ? "text-green-600" : "text-red-500"}>
-              • Number
-            </p>
-            <p className={rules.special ? "text-green-600" : "text-red-500"}>
-              • Special character
-            </p>
-          </div>
-          {error && error !== "success" && (
-            <div className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white mb-1 text-center">
-              {error}
+            <h3 className="text-3xl font-bold mb-2 mt-2 text-[#23181a] text-center">Sign Up</h3>
+            <div className="flex flex-col gap-2 mt-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                name="name"
+                autoComplete="name"
+                placeholder="Full Name"
+                className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
+              />
+              <input
+                value={phoneNo}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, "");
+                  if (value.length > 10) value = value.slice(0, 10);
+                  setPhoneNo(value);
+                }}
+                name="tel"
+                autoComplete="tel"
+                placeholder="Phone (10 digits)"
+                className={`border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full ${
+                  phoneNo && !isPhoneValid ? "ring-2 ring-red-400" : ""
+                }`}
+                maxLength={10}
+                pattern="\d{10}"
+                inputMode="numeric"
+              />
+              {phoneMessage && (
+                <span className="text-xs text-red-500">{phoneMessage}</span>
+              )}
+              <input
+                value={emailId}
+                onChange={(e) => setEmailId(e.target.value)}
+                name="email"
+                autoComplete="username email"
+                type="email"
+                placeholder="Email"
+                className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  autoComplete="new-password"
+                  placeholder="Password"
+                  className="border border-[#e8bcb9] px-4 py-3 rounded-xl text-base focus:border-[#cb7885] w-full"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="px-3 py-2 bg-gray-100 rounded-lg border text-xs"
+                  tabIndex={-1}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              {/* Password Rules */}
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mt-2 mb-1">
+                <p className={rules.length ? "text-green-600" : "text-red-500"}>
+                  • At least 8 characters
+                </p>
+                <p className={rules.upper ? "text-green-600" : "text-red-500"}>
+                  • Uppercase letter
+                </p>
+                <p className={rules.lower ? "text-green-600" : "text-red-500"}>
+                  • Lowercase letter
+                </p>
+                <p className={rules.number ? "text-green-600" : "text-red-500"}>
+                  • Number
+                </p>
+                <p className={rules.special ? "text-green-600" : "text-red-500"}>
+                  • Special character
+                </p>
+              </div>
+              {error && error !== "success" && (
+                <div className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white mb-1 text-center">
+                  {error}
+                </div>
+              )}
+              {error === "success" && (
+                <div className="rounded-lg bg-green-500 px-4 py-2 text-sm text-white mb-1 text-center">
+                  Account created! Redirecting...
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={
+                  loading ||
+                  !name ||
+                  !phoneNo ||
+                  !emailId ||
+                  !password ||
+                  !isPhoneValid ||
+                  !isPasswordValid
+                }
+                className={`w-full rounded-xl py-3 font-semibold text-white mt-2 transition shadow ${
+                  loading
+                    ? "bg-[#b46a75] cursor-not-allowed"
+                    : "bg-[#cb7885] hover:bg-[#b46a75]"
+                }`}
+              >
+                {loading ? "Creating Account..." : "Create Account"}
+              </button>
+              <p className="text-center text-sm text-gray-700 mt-3">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="underline font-medium text-[#cb7885] hover:text-[#b46a75]"
+                >
+                  Login
+                </Link>
+              </p>
             </div>
-          )}
-          {error === "success" && (
-            <div className="rounded-lg bg-green-500 px-4 py-2 text-sm text-white mb-1 text-center">
-              Account created! Redirecting...
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={
-              loading ||
-              !name ||
-              !phoneNo ||
-              !emailId ||
-              !password ||
-              !isPhoneValid ||
-              !isPasswordValid
-            }
-            className={`w-full rounded-xl py-3 font-semibold text-white mt-2 transition shadow ${
-              loading
-                ? "bg-[#b46a75] cursor-not-allowed"
-                : "bg-[#cb7885] hover:bg-[#b46a75]"
-            }`}
-          >
-            {loading ? "Creating Account..." : "Create Account"}
-          </button>
-        </form>
-        <p className="text-center text-sm text-gray-700 mt-4">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="underline font-medium text-[#cb7885] hover:text-[#b46a75]"
-          >
-            Login
-          </Link>
-        </p>
+          </form>
+        </div>
       </div>
     </main>
   );

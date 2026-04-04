@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
-  FaPen, FaTrash, FaSignOutAlt, FaUsers, FaCog, FaCalendarDay, FaRupeeSign, FaPlus, FaSortAlphaDown, FaSortAlphaUp, FaTimes
+  FaPen, FaTrash, FaSignOutAlt, FaUsers, FaCog, FaCalendarDay, FaRupeeSign, FaPlus,
+  FaSortAlphaDown, FaSortAlphaUp, FaTimes,
 } from "react-icons/fa";
 
-// Sapphire palette
 const PALETTE = {
   sapphire: "#3C507D",
   royalBlue: "#112E50",
@@ -15,24 +15,29 @@ const PALETTE = {
 };
 
 export default function DashboardPage() {
+  // ---- Data States ----
   const [tab, setTab] = useState("dashboard");
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-
   const [serviceSort, setServiceSort] = useState<"az" | "za">("az");
   const [staffSort, setStaffSort] = useState<"az" | "za">("az");
 
+  // Services
   const [newService, setNewService] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [editingService, setEditingService] = useState<any | null>(null);
 
+  // Staff
   const [newStaff, setNewStaff] = useState("");
-  const [editModalStaff, setEditModalStaff] = useState<any | null>(null);
+
+  // --- Unified Edit Staff Modal ---
+  const [editStaffModal, setEditStaffModal] = useState<any | null>(null);
   const [modalStaffName, setModalStaffName] = useState("");
   const [modalServiceAddId, setModalServiceAddId] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
 
+  // Quick Add Appointments (unchanged)
   const [quickApp, setQuickApp] = useState({
     date: "",
     serviceId: "",
@@ -41,44 +46,23 @@ export default function DashboardPage() {
     amount: "",
   });
   const [quickAddMsg, setQuickAddMsg] = useState("");
-  const [error, setError] = useState<string>("");
 
-  // Fetch all data on mount
   useEffect(() => { loadAll(); }, []);
-  const loadAll = async () => {
-    try {
-      await Promise.all([loadAppointments(), loadServices(), loadStaff()]);
-    } catch (err) {
-      setError("Could not load dashboard data");
-    }
-  };
-
+  const loadAll = async () => { await Promise.all([loadAppointments(), loadServices(), loadStaff()]); };
   const loadAppointments = async () => {
-    try {
-      const res = await fetch("/api/appointments");
-      setAppointments(await res.json());
-    } catch {
-      setError("Could not load appointments");
-    }
+    const res = await fetch("/api/appointments");
+    setAppointments(await res.json());
   };
   const loadServices = async () => {
-    try {
-      const res = await fetch("/api/services");
-      setServices(await res.json());
-    } catch {
-      setError("Could not load services");
-    }
+    const res = await fetch("/api/services");
+    setServices(await res.json());
   };
   const loadStaff = async () => {
-    try {
-      const res = await fetch("/api/staff?withServices=true");
-      setStaff(await res.json());
-    } catch {
-      setError("Could not load staff");
-    }
+    const res = await fetch("/api/staff?withServices=true");
+    setStaff(await res.json());
   };
 
-  // Services CRUD
+  // Service CRUD
   const addService = async () => {
     if (!newService || !newPrice) return;
     await fetch("/api/services", {
@@ -94,10 +78,7 @@ export default function DashboardPage() {
     await fetch(`/api/services?id=${editingService.serviceId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: editingService.type,
-        price: Number(editingService.price),
-      }),
+      body: JSON.stringify({ type: editingService.type, price: Number(editingService.price) }),
     });
     setEditingService(null); loadServices();
   };
@@ -106,7 +87,7 @@ export default function DashboardPage() {
     loadServices();
   };
 
-  // Staff CRUD + Modal (Name/Services together)
+  // Staff CRUD + Modal
   const addStaff = async () => {
     if (!newStaff) return;
     await fetch("/api/staff", {
@@ -118,54 +99,56 @@ export default function DashboardPage() {
   };
 
   const openEditStaffModal = (person: any) => {
-    setEditModalStaff(person);
+    setEditStaffModal(person);
     setModalStaffName(person.name);
     setModalServiceAddId("");
   };
+
   const handleSaveEditStaff = async () => {
     setModalLoading(true);
-    await fetch(`/api/staff?id=${editModalStaff.staffId}`, {
+    await fetch(`/api/staff?id=${editStaffModal.staffId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: modalStaffName }),
     });
     setModalLoading(false);
-    setEditModalStaff(null);
+    setEditStaffModal(null);
     setModalStaffName("");
     await loadStaff();
   };
+
   const handleDeleteStaff = async (staffId: number) => {
     if (!window.confirm("Delete this staff member?")) return;
     await fetch(`/api/staff?id=${staffId}`, { method: "DELETE" });
     await loadStaff();
   };
+
+  // Staff service assign/removal INSIDE MODAL
   const handleAddServiceToModalStaff = async () => {
     if (!modalServiceAddId) return;
     setModalLoading(true);
     await fetch("/api/staff/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ staffId: editModalStaff.staffId, serviceId: Number(modalServiceAddId) }),
+      body: JSON.stringify({ staffId: editStaffModal.staffId, serviceId: Number(modalServiceAddId) }),
     });
     setModalServiceAddId("");
     // update modal staff
-    const allStaff = await (await fetch("/api/staff?withServices=true")).json();
-    setEditModalStaff(allStaff.find((s: any) => s.staffId === editModalStaff.staffId));
+    const s = await (await fetch("/api/staff?withServices=true")).json();
+    setEditStaffModal(s.find((x: any) => x.staffId === editStaffModal.staffId));
     setModalLoading(false);
     await loadStaff();
   };
   const handleRemoveServiceFromModalStaff = async (serviceId: number) => {
     setModalLoading(true);
-    await fetch(`/api/staff/services?staffId=${editModalStaff.staffId}&serviceId=${serviceId}`, {
-      method: "DELETE",
-    });
-    const allStaff = await (await fetch("/api/staff?withServices=true")).json();
-    setEditModalStaff(allStaff.find((s: any) => s.staffId === editModalStaff.staffId));
+    await fetch(`/api/staff/services?staffId=${editStaffModal.staffId}&serviceId=${serviceId}`, { method: "DELETE" });
+    const s = await (await fetch("/api/staff?withServices=true")).json();
+    setEditStaffModal(s.find((x: any) => x.staffId === editStaffModal.staffId));
     setModalLoading(false);
     await loadStaff();
   };
 
-  // Data and computed lists
+  // Analytics, sorting, and available assign services for modal
   const sortedServices = [...services].sort((a, b) =>
     serviceSort === "az"
       ? a.type.localeCompare(b.type)
@@ -177,16 +160,16 @@ export default function DashboardPage() {
       : b.name.localeCompare(a.name)
   );
   const editModalAvailableServices =
-    editModalStaff && services.length
+    editStaffModal && services.length
       ? services.filter(
           (svc) =>
-            !(editModalStaff.services ?? []).some(
+            !(editStaffModal.services ?? []).some(
               (assigned: any) => assigned.serviceId === svc.serviceId
             )
         )
       : [];
 
-  // Analytics
+  // Analytics cards setup
   const today = new Date().toISOString().slice(0, 10);
   const appointmentsToday = appointments.filter(
     (a) => a.appDate && a.appDate.slice(0, 10) === today
@@ -219,35 +202,49 @@ export default function DashboardPage() {
     },
   ];
 
-  // Logout
+  // LOGOUT
   const logout = () => {
     localStorage.clear();
     window.location.href = "/login";
   };
 
-  // === UI BEGIN ===
+  // ==== RENDER ====
   return (
     <div className="min-h-screen w-full" style={{ background: PALETTE.swanWing }}>
-      {/* HEADER */}
-      <div className="flex items-center justify-between px-8 py-6" style={{ background: PALETTE.sapphire }}>
+      {/* HEADER BAR */}
+      <div
+        className="flex items-center justify-between px-8 py-6"
+        style={{ background: PALETTE.sapphire }}
+      >
         <div className="flex items-center gap-3">
           <FaCog style={{ color: PALETTE.swanWing, fontSize: "28px" }} />
-          <span className="text-2xl font-extrabold" style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}>
+          <span
+            className="text-2xl font-extrabold"
+            style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}
+          >
             Salon Admin
           </span>
-          <span className="text-sm" style={{ color: "#b6bed1" }}>Business Dashboard</span>
+          <span className="text-sm" style={{ color: "#b6bed1" }}>
+            Business Dashboard
+          </span>
         </div>
         <button
           onClick={logout}
           className="flex items-center gap-2 text-white"
           style={{
-            background: PALETTE.royalBlue, padding: "10px 25px", borderRadius: "10px",
-            fontWeight: "bold", letterSpacing: "0.04em", boxShadow: "0 2px 6px #112E5070"
-          }}>
+            background: PALETTE.royalBlue,
+            padding: "10px 25px",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            letterSpacing: "0.04em",
+            boxShadow: "0 2px 6px #112E5070",
+          }}
+        >
           <FaSignOutAlt /> Logout
         </button>
       </div>
-      {/* TABS */}
+
+      {/* TABS ... (same as your code) */}
       <div className="flex gap-4 mt-8 px-10">
         {["dashboard", "appointments", "services", "staff"].map((t) => (
           <button
@@ -273,21 +270,176 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
-      {/* ERROR */}
-      {error && <div className="bg-red-100 text-red-700 px-8 py-4 m-5 rounded">{error}</div>}
-      {/* DASHBOARD COMPONENTS - Analytics, QuickAdd, Appointments, etc (as above) */}
-      {/* ...Same as previous completions for these tabs... */}
+
+      {/* ...Dashboard/Analytics/Services/Appointments unchanged... */}
+
       {/* STAFF TAB */}
       {tab === "staff" && (
-        <div className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
-          style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}>
-          {/* ...Add, Sort, Table ... */}
-          {/* ...use openEditStaffModal, handleSaveEditStaff, handleAddServiceToModalStaff... */}
-          {/* ...render the Edit Staff Modal as shown previously ... */}
-          {/* (Copy modal code from previous completion above) */}
+        <div
+          className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
+          style={{
+            background: PALETTE.shellstone,
+            borderColor: PALETTE.royalBlue,
+          }}>
+          
+          {/* Add staff */}
+          <div className="flex gap-3 mb-7">
+            <input
+              className="border rounded-lg px-3 py-2 w-1/3"
+              placeholder="Staff name"
+              value={newStaff}
+              onChange={(e) => setNewStaff(e.target.value)}
+              style={{ borderColor: PALETTE.royalBlue }}
+            />
+            <button
+              onClick={addStaff}
+              className="px-6 py-2 rounded-lg font-semibold hover:opacity-85"
+              style={{
+                background: PALETTE.sapphire,
+                color: PALETTE.swanWing,
+              }}>
+              Add
+            </button>
+          </div>
+          {/* TABLE */}
+          <table className="w-full text-base">
+            <thead>
+              <tr style={{
+                background: PALETTE.swanWing,
+                color: PALETTE.royalBlue,
+              }}>
+                <th className="py-3 text-left">Name</th>
+                <th className="text-left w-60">Assigned Services</th>
+                <th className="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedStaff.map((s) => (
+                <tr
+                  key={s.staffId}
+                  className="border-b hover:bg-[#e9e5df]"
+                  style={{ borderColor: PALETTE.royalBlue }}>
+                  <td className="py-3">{s.name}</td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {(s.services ?? []).map((svc: any) => (
+                        <span key={svc.serviceId} className="inline-flex items-center px-2 py-1 bg-[#e0d7c7] rounded text-xs mr-1 mb-1">
+                          {svc.type}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => openEditStaffModal(s)}
+                      className="inline-flex items-center mr-4"
+                      style={{ color: PALETTE.sapphire }}
+                      title="Edit"
+                    >
+                      <FaPen className="mr-1" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteStaff(s.staffId)}
+                      className="inline-flex items-center"
+                      style={{ color: PALETTE.royalBlue }}
+                      title="Delete"
+                    >
+                      <FaTrash className="mr-1" /> Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* --- UNIFIED EDIT STAFF MODAL --- */}
+          {editStaffModal && (
+            <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+              <div className="rounded-2xl shadow-xl bg-[#faf6f0] border-2 border-[#112E50] px-8 py-6 min-w-[350px] max-w-[90vw] w-full md:w-[440px] relative">
+                <button
+                  aria-label="Close"
+                  onClick={() => setEditStaffModal(null)}
+                  className="absolute top-3 right-3 rounded-full bg-[#fff] hover:bg-[#eee] border shadow p-2"
+                >
+                  <FaTimes className="text-2xl text-[#cb7885]" />
+                </button>
+                <h3 className="font-bold text-xl mb-5 text-[#112E50]">Edit Staff</h3>
+                <label className="block mb-2 text-[#23181a] font-semibold text-sm">Name</label>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mb-5 text-base"
+                  placeholder="Staff name"
+                  value={modalStaffName}
+                  onChange={e => setModalStaffName(e.target.value)}
+                  disabled={modalLoading}
+                />
+                {/* Services Editor */}
+                <div className="mb-5">
+                  <div className="font-semibold mb-1 text-[#23181a]">Services</div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {(editStaffModal.services ?? []).map((svc: any) => (
+                      <span
+                        key={svc.serviceId}
+                        className="inline-flex items-center px-3 py-1 bg-[#dceae5] rounded text-sm font-medium"
+                      >
+                        {svc.type}
+                        <button
+                          className="ml-2 text-[#cb7885] hover:text-red-800"
+                          title="Remove"
+                          type="button"
+                          disabled={modalLoading}
+                          onClick={() => handleRemoveServiceFromModalStaff(svc.serviceId)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  {editModalAvailableServices.length > 0 && (
+                    <div className="flex gap-2 items-center mb-2">
+                      <select
+                        className="border rounded py-1 px-2 text-sm"
+                        value={modalServiceAddId}
+                        onChange={e => setModalServiceAddId(e.target.value)}
+                        disabled={modalLoading}
+                      >
+                        <option value="">Add service…</option>
+                        {editModalAvailableServices.map((svc: any) =>
+                          <option key={svc.serviceId} value={svc.serviceId}>{svc.type}</option>
+                        )}
+                      </select>
+                      <button
+                        type="button"
+                        disabled={!modalServiceAddId || modalLoading}
+                        className="bg-[#cb7885] text-white px-2 py-1 rounded disabled:opacity-40"
+                        onClick={handleAddServiceToModalStaff}
+                      >
+                        <FaPlus />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setEditStaffModal(null)}
+                    className="px-5 py-2 rounded font-medium bg-gray-200 text-[#112E50] hover:opacity-80"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEditStaff}
+                    className="px-5 py-2 rounded font-semibold bg-[#112E50] text-white hover:opacity-90"
+                    type="button"
+                    disabled={!modalStaffName.trim() || modalLoading}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
-      {/* ...Other tabs code... */}
     </div>
   );
 }
