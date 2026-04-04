@@ -27,12 +27,8 @@ type Staff = {
 };
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  return parts.map((p) => p[0]?.toUpperCase()).join("") || "U";
 }
 
 export default function BookPage() {
@@ -53,7 +49,7 @@ export default function BookPage() {
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Start with safe server values, then load client values
+  // Profile/avatar state
   const [profileName, setProfileName] = useState("User");
   const [loggedIn, setLoggedIn] = useState(false);
 
@@ -71,13 +67,11 @@ export default function BookPage() {
     form.date &&
     form.time;
 
-  // SSR/client-safety: only update state on client
   useEffect(() => {
-    // This check is not required in useEffect, but safe for TypeScript
     const name = localStorage.getItem("profileName");
     const isLogged = localStorage.getItem("isLoggedIn");
     if (name) setProfileName(name);
-    if (isLogged) setLoggedIn(isLogged === "true");
+    setLoggedIn(isLogged === "true");
   }, []);
 
   const initials = useMemo(() => getInitials(profileName), [profileName]);
@@ -137,7 +131,6 @@ export default function BookPage() {
       setErrorMessage("Please fill all required fields.");
       return;
     }
-
     const service = services.find(
       (s) => String(s.serviceId) === form.serviceId
     );
@@ -145,7 +138,6 @@ export default function BookPage() {
       form.staffId === "any"
         ? "ANY"
         : staffList.find((s) => String(s.staffId) === form.staffId)?.name || "ANY";
-
     const params = new URLSearchParams({
       fullName: form.fullName,
       phone: form.phone,
@@ -155,7 +147,6 @@ export default function BookPage() {
       time: form.time,
       total: String(service?.price || 0),
     });
-
     router.push(`/payment?${params.toString()}`);
   }
 
@@ -182,9 +173,11 @@ export default function BookPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => router.push("/profile")}
                 className="h-10 w-10 rounded-full bg-white flex items-center justify-center hover:ring-2 ring-[#cb7885] transition"
                 title="Go to profile"
+                aria-label="Go to profile"
+                onClick={() => router.push("/profile")}
+                tabIndex={0}
               >
                 {initials}
               </button>
@@ -204,7 +197,7 @@ export default function BookPage() {
       {/* FORM */}
       <section className="max-w-5xl mx-auto mt-10 px-6">
         <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
-          {/* LEFT */}
+          {/* LEFT - Personal Info */}
           <div className="bg-white p-6 rounded-2xl shadow space-y-4">
             <h2 className="font-semibold">Personal Info</h2>
             <input
@@ -215,13 +208,14 @@ export default function BookPage() {
             />
             <input
               value={form.phone}
-              onChange={(e) => update("phone", e.target.value)}
+              onChange={(e) => update("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
               placeholder="Phone"
               className="w-full p-3 border rounded-lg"
+              maxLength={10}
             />
           </div>
 
-          {/* RIGHT */}
+          {/* RIGHT - Booking Details */}
           <div className="bg-white p-6 rounded-2xl shadow space-y-4">
             <h2 className="font-semibold">Booking Details</h2>
 
@@ -248,7 +242,7 @@ export default function BookPage() {
             >
               <option value="">Select Service</option>
               {filteredServices.map((s) => (
-                <option key={s.serviceId} value={s.serviceId}>
+                <option key={s.serviceId} value={String(s.serviceId)}>
                   {s.type}
                 </option>
               ))}
@@ -266,7 +260,7 @@ export default function BookPage() {
                 <>
                   <option value="any">Any staff</option>
                   {staffList.map((s) => (
-                    <option key={s.staffId} value={s.staffId}>
+                    <option key={s.staffId} value={String(s.staffId)}>
                       {s.name}
                     </option>
                   ))}

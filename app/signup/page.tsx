@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { FaTimes } from "react-icons/fa";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
   return parts.map((p) => p[0]?.toUpperCase()).join("") || "U";
 }
 
-// Dims the background for modal effect
 const ModalOverlay = ({ children }: { children: React.ReactNode }) => (
   <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center min-h-screen">
     {children}
@@ -48,7 +48,6 @@ export default function SignupPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     if (!name || !phoneNo || !emailId || !password) {
       setError("Please fill all fields.");
       return;
@@ -61,7 +60,6 @@ export default function SignupPage() {
       setError("Password does not meet requirements.");
       return;
     }
-
     setLoading(true);
     try {
       const res = await fetch("/api/customers/signup", {
@@ -125,7 +123,17 @@ export default function SignupPage() {
 
       {/* Modal Overlay for Form */}
       <ModalOverlay>
-        <div className="w-full max-w-3xl bg-white rounded-3xl flex flex-col md:flex-row items-stretch shadow-2xl border border-[#eadcc6] overflow-hidden">
+        <div className="w-full max-w-3xl bg-white rounded-3xl flex flex-col md:flex-row items-stretch shadow-2xl border border-[#eadcc6] overflow-hidden relative">
+          {/* CLOSE BUTTON */}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => router.push("/")}
+            className="absolute top-3 right-3 z-20 rounded-full hover:bg-[#f7ecd8] bg-white border shadow p-2 transition"
+            tabIndex={0}
+          >
+            <FaTimes className="text-xl text-[#cb7885]" />
+          </button>
           {/* Profile Visual Section (Left) */}
           <div className="md:w-2/5 flex flex-col items-center justify-center bg-[#f7ecd8] p-10 md:rounded-l-3xl">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#cb7885]/10 flex items-center justify-center text-5xl font-bold shadow-inner border-2 border-[#eadcd1] mb-8">

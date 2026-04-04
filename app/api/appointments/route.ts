@@ -4,16 +4,19 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
+  const custId = searchParams.get("custId");
 
-  const where = q
-    ? {
-        OR: [
-          { service: { is: { type: { contains: q, mode: "insensitive" as const } } } },
-          { staff: { is: { name: { contains: q, mode: "insensitive" as const } } } },
-          { status: { contains: q, mode: "insensitive" as const } },
-        ],
-      }
-    : undefined;
+  const where: any = {};
+  if (custId) {
+    where.customerId = Number(custId);
+  }
+  if (q) {
+    where.OR = [
+      { service: { is: { type: { contains: q, mode: "insensitive" as const } } } },
+      { staff: { is: { name: { contains: q, mode: "insensitive" as const } } } },
+      { status: { contains: q, mode: "insensitive" as const } },
+    ];
+  }
 
   const appointments = await prisma.appointment.findMany({
     where,

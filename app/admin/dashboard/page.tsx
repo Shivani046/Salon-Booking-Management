@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { FaPen, FaTrash, FaSignOutAlt, FaUsers, FaCog, FaCalendarDay, FaRupeeSign, FaPlus } from "react-icons/fa";
 
-// Sapphire palette (from image 5)
+// Sapphire palette
 const PALETTE = {
   sapphire: "#3C507D",
   royalBlue: "#112E50",
@@ -17,6 +17,8 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
+  // Sorting state for services
+  const [serviceSort, setServiceSort] = useState<"az" | "za">("az");
 
   // Service form state
   const [newService, setNewService] = useState("");
@@ -31,7 +33,6 @@ export default function DashboardPage() {
   const [quickApp, setQuickApp] = useState({ date: "", serviceId: "", staffId: "", customer: "", amount: "" });
   const [quickAddMsg, setQuickAddMsg] = useState("");
 
-  // -------- LOAD DATA --------
   useEffect(() => { loadAll(); }, []);
   const loadAll = async () => { await Promise.all([loadAppointments(), loadServices(), loadStaff()]); };
 
@@ -51,7 +52,7 @@ export default function DashboardPage() {
   // ==== SERVICES CRUD ====
   const addService = async () => {
     if (!newService || !newPrice) return;
-    await fetch("/api/admin/services", {
+    await fetch("/api/services", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ type: newService, price: Number(newPrice) }),
@@ -61,7 +62,7 @@ export default function DashboardPage() {
   const startEditService = (svc: any) => setEditingService({ ...svc });
   const updateService = async () => {
     if (!editingService.type || !editingService.price) return;
-    await fetch(`/api/admin/services?id=${editingService.serviceId}`, {
+    await fetch(`/api/services?id=${editingService.serviceId}`, {
       method: "PUT",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ type: editingService.type, price: Number(editingService.price) }),
@@ -69,7 +70,7 @@ export default function DashboardPage() {
     setEditingService(null); loadServices();
   };
   const deleteService = async (id: number) => {
-    await fetch(`/api/admin/services?id=${id}`, { method: "DELETE" });
+    await fetch(`/api/services?id=${id}`, { method: "DELETE" });
     loadServices();
   };
 
@@ -86,7 +87,7 @@ export default function DashboardPage() {
   const startEditStaff = (person: any) => setEditingStaff({ ...person });
   const updateStaff = async () => {
     if (!editingStaff.name) return;
-    await fetch(`/api/admin/staff?id=${editingStaff.staffId}`, {
+    await fetch(`/api/staff?id=${editingStaff.staffId}`, {
       method: "PUT",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ name: editingStaff.name }),
@@ -94,7 +95,7 @@ export default function DashboardPage() {
     setEditingStaff(null); loadStaff();
   };
   const deleteStaff = async (id: number) => {
-    await fetch(`/api/admin/staff?id=${id}`, { method: "DELETE" });
+    await fetch(`/api/staff?id=${id}`, { method: "DELETE" });
     loadStaff();
   };
 
@@ -132,6 +133,14 @@ export default function DashboardPage() {
       bg: PALETTE.shellstone
     }
   ];
+
+  // ==== SORTED SERVICES ====
+  const sortedServices =
+    [...services].sort((a, b) =>
+      serviceSort === "az"
+        ? a.type.localeCompare(b.type)
+        : b.type.localeCompare(a.type)
+    );
 
   return (
     <div className="min-h-screen w-full" style={{ background: PALETTE.swanWing }}>
@@ -335,13 +344,29 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ========== SERVICES ========== */}
+      {/* ========== SERVICES - with SORT/FILTER ========== */}
       {tab === "services" && (
         <div
           className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
           style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}
         >
           <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>Services</h2>
+          {/* FILTER/SORT BUTTONS */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="font-medium text-sm" style={{color:PALETTE.royalBlue}}>Sort by:</span>
+            <button
+              onClick={() => setServiceSort("az")}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${serviceSort === "az" ? "bg-[#3C507D] text-white" : "bg-white text-[#3C507D] border-[#3C507D]"} hover:bg-[#3C507D]/10`}
+            >
+              A-Z
+            </button>
+            <button
+              onClick={() => setServiceSort("za")}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${serviceSort === "za" ? "bg-[#3C507D] text-white" : "bg-white text-[#3C507D] border-[#3C507D]"} hover:bg-[#3C507D]/10`}
+            >
+              Z-A
+            </button>
+          </div>
           {/* ADD */}
           <div className="flex gap-3 mb-7">
             <input
@@ -371,6 +396,7 @@ export default function DashboardPage() {
           {editingService && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
               <div className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2" style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}>
+                {/* Modal content */}
                 <h3 className="font-bold text-lg mb-4" style={{ color: PALETTE.royalBlue }}>Edit Service</h3>
                 <input
                   className="border rounded-lg px-3 py-2 w-full mb-3"
@@ -416,7 +442,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {services.map((s) => (
+              {sortedServices.map((s) => (
                 <tr key={s.serviceId} className="border-b hover:bg-[#e9e5df]" style={{ borderColor: PALETTE.royalBlue }}>
                   <td className="py-3">{s.type}</td>
                   <td>₹{s.price}</td>
@@ -452,7 +478,6 @@ export default function DashboardPage() {
           style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}
         >
           <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>Staff</h2>
-          {/* ADD */}
           <div className="flex gap-3 mb-7">
             <input
               className="border rounded-lg px-3 py-2 w-1/3"

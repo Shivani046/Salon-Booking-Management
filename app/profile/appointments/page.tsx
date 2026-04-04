@@ -4,44 +4,30 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Tab = "upcoming" | "past";
-
-type Appointment = {
-  id: string;
-  service: string;
-  dateLabel: string; // e.g. "MARCH 03"
-  timeLabel: string; // e.g. "03:30PM"
-  staff: string;
-  amount: string;
-};
-
+// For reschedule/cancel modals
 type ModalState =
   | { open: false }
   | { open: true; type: "reschedule"; appt: Appointment }
   | { open: true; type: "cancel"; appt: Appointment };
 
-const TIME_OPTIONS = [
-  "10:00 AM",
-  "10:30 AM",
-  "11:00 AM",
-  "11:30 AM",
-  "12:00 PM",
-  "12:30 PM",
-  "01:00 PM",
-  "01:30 PM",
-  "02:00 PM",
-  "02:30 PM",
-  "03:00 PM",
-  "03:30 PM",
-  "04:00 PM",
-  "04:30 PM",
-  "05:00 PM",
-  "05:30 PM",
-  "06:00 PM",
-  "06:30 PM",
-];
+// The internal type after mapping from DB
+type Appointment = {
+  id: string;
+  service: string;
+  dateStr: string; // YYYY-MM-DD for easy reschedule
+  timeStr: string; // "18:00"
+  dateLabel: string; // e.g. "APRIL 04"
+  timeLabel: string; // e.g. "06:00PM"
+  staff: string;
+  amount: string;
+  status: string; // "UPCOMING" | "COMPLETED" | "CANCELLED"
+};
 
-const STAFF_OPTIONS = ["Any staff", "Aanya", "Meera", "Riya", "Sana"];
+const TIME_OPTIONS = [
+  "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+  "18:00", "18:30", "19:00", "19:30", "20:00",
+];
 
 function UserIcon() {
   return (
@@ -62,59 +48,75 @@ function UserIcon() {
 
 export default function AppointmentsPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("upcoming");
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
-  // Demo data (state updates happen via button clicks, not useEffect)
-  const [upcoming, setUpcoming] = useState<Appointment[]>([
-    {
-      id: "A-1001",
-      service: "MANICURE",
-      dateLabel: "MARCH 03",
-      timeLabel: "03:30PM",
-      staff: "Aanya",
-      amount: "1200/-",
-    },
-  ]);
+  // All appointments loaded, split into two lists
+  const [upcoming, setUpcoming] = useState<Appointment[]>([]);
+  const [past, setPast] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [past, setPast] = useState<Appointment[]>([
-    {
-      id: "A-0994",
-      service: "FACIAL",
-      dateLabel: "DECEMBER 01",
-      timeLabel: "06:00PM",
-      staff: "Meera",
-      amount: "800/-",
-    },
-    {
-      id: "A-0977",
-      service: "MANICURE",
-      dateLabel: "NOVEMBER 09",
-      timeLabel: "04:45PM",
-      staff: "Riya",
-      amount: "1700/-",
-    },
-  ]);
-
-  // Popup
+  // Modal State for reschedule/cancel
   const [modal, setModal] = useState<ModalState>({ open: false });
 
-  // Reschedule editable fields
+  // Reschedule state
   const [editDate, setEditDate] = useState(""); // YYYY-MM-DD
   const [editTime, setEditTime] = useState("");
   const [editStaff, setEditStaff] = useState("Any staff");
 
-  // Redirect only (no setState)
+  // Load appointments of logged in user only
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (!loggedIn) router.push("/login");
+    const custId = localStorage.getItem("custId");
+    if (!loggedIn || !custId) {
+      router.push("/login");
+      return;
+    }
+
+    async function fetchAppointments() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/appointments?custId=${custId}`);
+        const dbApps: any[] = await res.json();
+
+        const now = new Date();
+        const upcomingArr: Appointment[] = [];
+        const pastArr: Appointment[] = [];
+
+        for (const a of dbApps) {
+          const dt = new Date(`${a.appDate}T${a.appTime}`);
+          const staffName = a.staff?.name || "Any staff";
+          const base: Appointment = {
+            id: a.appId || a.id,
+            service: a.service?.type || "Service",
+            dateStr: a.appDate,
+            timeStr: a.appTime,
+            dateLabel: formatDateLabel(a.appDate),
+            timeLabel: formatTimeLabel(a.appTime),
+            staff: staffName,
+            amount: `₹${a.amount}`,
+            status: a.status || "UPCOMING",
+          };
+          if (dt >= now && base.status !== "CANCELLED" && base.status !== "COMPLETED") {
+            upcomingArr.push(base);
+          } else {
+            pastArr.push({
+              ...base,
+              service: base.status === "CANCELLED" ? `${base.service} (CANCELLED)` : base.service,
+            });
+          }
+        }
+        setUpcoming(upcomingArr.sort((a, b) => a.dateStr.localeCompare(b.dateStr)));
+        setPast(pastArr.sort((a, b) => b.dateStr.localeCompare(a.dateStr)));
+      } catch {
+        setUpcoming([]); setPast([]);
+      }
+      setLoading(false);
+    }
+    fetchAppointments();
   }, [router]);
 
   function logout() {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("profileName");
-    localStorage.removeItem("profileInitials");
-    localStorage.removeItem("profileEmail");
-    localStorage.removeItem("profilePhone");
+    localStorage.clear();
     router.push("/");
   }
 
@@ -123,8 +125,8 @@ export default function AppointmentsPage() {
   }
 
   function openReschedule(appt: Appointment) {
-    setEditDate("");
-    setEditTime("");
+    setEditDate(appt.dateStr);
+    setEditTime(appt.timeStr);
     setEditStaff(appt.staff || "Any staff");
     setModal({ open: true, type: "reschedule", appt });
   }
@@ -133,19 +135,20 @@ export default function AppointmentsPage() {
     setModal({ open: true, type: "cancel", appt });
   }
 
+  // In-memory (UI) update, not DB: You can upgrade to call API as needed
   function saveReschedule() {
     if (!modal.open || modal.type !== "reschedule") return;
-
     if (!editDate || !editTime) {
       alert("Please choose a new date and time.");
       return;
     }
-
     setUpcoming((prev) =>
       prev.map((a) =>
         a.id === modal.appt.id
           ? {
               ...a,
+              dateStr: editDate,
+              timeStr: editTime,
               dateLabel: formatDateLabel(editDate),
               timeLabel: formatTimeLabel(editTime),
               staff: editStaff,
@@ -153,19 +156,22 @@ export default function AppointmentsPage() {
           : a
       )
     );
-
     closeModal();
   }
 
+  // In-memory (UI) update, not DB: You can upgrade to call API as needed
   function confirmCancel() {
     if (!modal.open || modal.type !== "cancel") return;
-
-    // remove from upcoming + add to past as cancelled record (so user still sees it)
     const appt = modal.appt;
-
     setUpcoming((prev) => prev.filter((a) => a.id !== appt.id));
-    setPast((prev) => [{ ...appt, service: `${appt.service} (CANCELLED)` }, ...prev]);
-
+    setPast((prev) => [
+      {
+        ...appt,
+        service: `${appt.service} (CANCELLED)`,
+        status: "CANCELLED",
+      },
+      ...past,
+    ]);
     closeModal();
   }
 
@@ -182,25 +188,15 @@ export default function AppointmentsPage() {
           <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
             ERAILE BEAUTY
           </Link>
-
           <div className="hidden items-center gap-10 text-[0.92rem] font-medium uppercase tracking-[0.12em] md:flex">
-            <Link href="/" className="transition hover:opacity-75">
-              Home
-            </Link>
-            <Link href="/services" className="transition hover:opacity-75">
-              Services
-            </Link>
-            <Link href="/book" className="transition hover:opacity-75">
-              Book
-            </Link>
-            <Link href="/contact" className="transition hover:opacity-75">
-              Contact
-            </Link>
+            <Link href="/" className="transition hover:opacity-75">Home</Link>
+            <Link href="/services" className="transition hover:opacity-75">Services</Link>
+            <Link href="/book" className="transition hover:opacity-75">Book</Link>
+            <Link href="/contact" className="transition hover:opacity-75">Contact</Link>
             <UserIcon />
           </div>
         </nav>
       </header>
-
       {/* Layout */}
       <section className="mx-auto grid min-h-[calc(100vh-76px)] max-w-7xl grid-cols-1 md:grid-cols-[320px_1fr]">
         {/* Sidebar */}
@@ -209,23 +205,19 @@ export default function AppointmentsPage() {
             <div className="px-10 py-6 text-left text-base font-semibold uppercase tracking-[0.14em] text-black/80">
               Dashboard
             </div>
-
             <SideItem label="Profile" active={false} onClick={() => router.push("/profile")} />
             <SideItem label="Services" active={false} onClick={() => router.push("/services")} />
             <SideItem label="Appointments" active onClick={() => router.push("/profile/appointments")} />
             <SideItem label="Billing History" active={false} onClick={() => router.push("/profile/billing")} />
-
             <div className="mt-auto">
               <SideItem label="Logout" active={false} onClick={logout} />
             </div>
           </nav>
         </aside>
-
         {/* Main */}
         <div className="bg-[#f7ecd8] px-6 py-10 md:px-12">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-semibold uppercase tracking-[0.12em]">My Appointments</h1>
-
             {/* Tabs */}
             <div className="mt-6 flex items-center gap-4">
               <button
@@ -234,24 +226,19 @@ export default function AppointmentsPage() {
                 className={`rounded-md px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] transition ${
                   tab === "upcoming" ? "bg-[#d9d9d9]" : "hover:bg-black/5"
                 }`}
-              >
-                Upcoming
-              </button>
-
+              >Upcoming</button>
               <button
                 type="button"
                 onClick={() => setTab("past")}
                 className={`rounded-md px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] transition ${
                   tab === "past" ? "bg-[#d9d9d9]" : "hover:bg-black/5"
                 }`}
-              >
-                Past
-              </button>
+              >Past</button>
             </div>
-
             <div className="mt-5 h-px w-full bg-black/20" />
-
-            {tab === "upcoming" ? (
+            {loading ? (
+              <div className="mt-16 text-center text-[#6f6460]">Loading...</div>
+            ) : tab === "upcoming" ? (
               <div className="mt-6 space-y-6">
                 {upcoming.length === 0 ? (
                   <EmptyState text="No upcoming appointments." />
@@ -279,8 +266,7 @@ export default function AppointmentsPage() {
           </div>
         </div>
       </section>
-
-      {/* Popup overlay */}
+      {/* Modal */}
       {modal.open ? (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 px-4"
@@ -296,7 +282,6 @@ export default function AppointmentsPage() {
                 <p className="mt-2 text-sm text-[#6f6460]">
                   {modal.appt.service} • {modal.appt.dateLabel}, {modal.appt.timeLabel}
                 </p>
-
                 <div className="mt-5 space-y-4">
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em]">
@@ -309,7 +294,6 @@ export default function AppointmentsPage() {
                       className="w-full rounded-xl border border-black/10 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#cb7885]/35"
                     />
                   </div>
-
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em]">
                       New time
@@ -324,45 +308,34 @@ export default function AppointmentsPage() {
                       </option>
                       {TIME_OPTIONS.map((t) => (
                         <option key={t} value={t}>
-                          {t}
+                          {formatTimeLabel(t)}
                         </option>
                       ))}
                     </select>
                   </div>
-
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em]">
                       Staff
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={editStaff}
-                      onChange={(e) => setEditStaff(e.target.value)}
+                      onChange={e => setEditStaff(e.target.value)}
                       className="w-full rounded-xl border border-black/10 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#cb7885]/35"
-                    >
-                      {STAFF_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
-
                 <div className="mt-6 flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={closeModal}
                     className="rounded-xl bg-[#e6e2dc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
-                  >
-                    Close
-                  </button>
+                  >Close</button>
                   <button
                     type="button"
                     onClick={saveReschedule}
                     className="rounded-xl bg-[#cb7885] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black"
-                  >
-                    Save
-                  </button>
+                  >Save</button>
                 </div>
               </>
             ) : (
@@ -371,31 +344,26 @@ export default function AppointmentsPage() {
                 <p className="mt-2 text-sm text-[#6f6460]">
                   {modal.appt.service} • {modal.appt.dateLabel}, {modal.appt.timeLabel}
                 </p>
-
                 <p className="mt-4 text-sm text-[#6f6460]">
                   Do you want to cancel this appointment, or reschedule it instead?
                 </p>
-
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={rescheduleInsteadFromCancel}
-                    className="rounded-xl bg-[#e3c7b7] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
-                  >
+                    className="rounded-xl bg-[#e3c7b7] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
                     Reschedule
                   </button>
                   <button
                     type="button"
                     onClick={confirmCancel}
-                    className="rounded-xl bg-[#cb7885] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black"
-                  >
+                    className="rounded-xl bg-[#cb7885] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black">
                     Cancel Appointment
                   </button>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="rounded-xl bg-[#e6e2dc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
-                  >
+                    className="rounded-xl bg-[#e6e2dc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
                     Close
                   </button>
                 </div>
@@ -424,9 +392,7 @@ function SideItem({
       className={`w-full px-10 py-6 text-left text-base font-medium uppercase tracking-[0.14em] transition ${
         active ? "bg-black/25" : "hover:bg-black/10"
       }`}
-    >
-      {label}
-    </button>
+    >{label}</button>
   );
 }
 
@@ -451,34 +417,27 @@ function AppointmentCard({
           </p>
           <p className="mt-2 text-sm uppercase tracking-[0.12em]">{item.staff}</p>
         </div>
-
         <div className="flex items-center gap-7">
           <p className="min-w-[90px] text-right text-base font-semibold">{item.amount}</p>
-
           {rightType === "upcoming" ? (
             <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={onReschedule}
                 className="rounded-md bg-[#9a4d5b] px-6 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black shadow-sm transition hover:opacity-90"
-              >
-                Reschedule
-              </button>
+              >Reschedule</button>
               <button
                 type="button"
                 onClick={onCancel}
                 className="rounded-md bg-[#9a4d5b] px-6 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black shadow-sm transition hover:opacity-90"
-              >
-                Cancel
-              </button>
+              >Cancel</button>
             </div>
           ) : (
             <button
               type="button"
               className="rounded-md bg-[#9a4d5b] px-7 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black shadow-sm"
-            >
-              Completed
-            </button>
+              disabled
+            >Completed</button>
           )}
         </div>
       </div>
@@ -502,5 +461,9 @@ function formatDateLabel(dateStr: string) {
 }
 
 function formatTimeLabel(time: string) {
-  return time.replace(" ", "").toUpperCase();
+  // Expects "18:00" → "06:00PM"
+  const [hr, min] = time.split(":").map(Number);
+  const h = hr % 12 === 0 ? 12 : hr % 12;
+  const ampm = hr < 12 ? "AM" : "PM";
+  return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}${ampm}`;
 }

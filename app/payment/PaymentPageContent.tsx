@@ -20,13 +20,21 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>("Cash at the salon");
 
+  const [serviceList, setServiceList] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
+
   // AUTH
   useEffect(() => {
     const isLogged = localStorage.getItem("isLoggedIn");
     const name = localStorage.getItem("profileName");
-
     setLoggedIn(isLogged === "true");
     setProfileName(name || "User");
+  }, []);
+
+  // Fetch services and staff once for mapping to IDs
+  useEffect(() => {
+    fetch("/api/services").then((r) => r.json()).then(setServiceList);
+    fetch("/api/staff").then((r) => r.json()).then(setStaffList);
   }, []);
 
   const initials = useMemo(() => getInitials(profileName), [profileName]);
@@ -52,34 +60,76 @@ export default function PaymentPage() {
     );
   }
 
-  // ✅ FIXED CONFIRM
   async function onConfirm() {
     if (loading) return;
 
     try {
       setLoading(true);
 
-      const res = await fetch("/api/admin/appointments", {
+      // 1. Get logged-in customer ID
+      const custId = localStorage.getItem("custId");
+      if (!custId) {
+        alert("You must be logged in to confirm a booking.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Map names to IDs
+      let serviceId: number | null = null;
+      let staffId: number | null = null;
+
+      const matchedService = serviceList.find(
+        (s) => s.type.toLowerCase() === appointment.service.toLowerCase()
+      );
+      if (matchedService) serviceId = matchedService.serviceId;
+
+      if (
+        appointment.staff &&
+        appointment.staff !== "ANY"
+      ) {
+        const matchedStaff = staffList.find(
+          (s) => s.name.toLowerCase() === appointment.staff.toLowerCase()
+        );
+        if (matchedStaff) staffId = matchedStaff.staffId;
+      }
+
+      if (!serviceId) {
+        alert("Service not found. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // 3. Build booking payload
+      const payload: any = {
+        customerId: Number(custId),
+        serviceId,
+        staffId,                            // valid id or null
+        appDate: appointment.date,
+        appTime: appointment.time,
+        amount: Number(appointment.total),
+        status: "UPCOMING",
+        paymentMethod: method,
+      };
+
+      // 4. Send booking POST
+      const res = await fetch("/api/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          fullName: appointment.fullName,
-          phone: appointment.phone,
-          service: appointment.service,
-          staff: appointment.staff,
-          date: appointment.date,
-          time: appointment.time,
-          total: appointment.total,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save appointment");
+        try {
+          const data = await res.json();
+          throw new Error(data?.error || "Failed to save appointment");
+        } catch {
+          throw new Error("Failed to save appointment");
+        }
       }
 
-      // redirect
+      // Success: redirect
       const params = new URLSearchParams({
         service: appointment.service,
         staff: appointment.staff,
@@ -91,7 +141,7 @@ export default function PaymentPage() {
 
       router.push(`/confirmed?${params.toString()}`);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       alert("Booking failed. Try again.");
     } finally {
@@ -102,7 +152,6 @@ export default function PaymentPage() {
   // UI
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
-      
       {/* NAVBAR */}
       <header className="bg-[#cb7885] shadow-md">
         <nav className="flex items-center justify-between px-6 py-4">
@@ -143,16 +192,13 @@ export default function PaymentPage() {
         {/* SUMMARY */}
         <div className="bg-white rounded-xl p-6 shadow">
           <h2 className="font-semibold mb-4">Summary</h2>
-
           <p><b>Name:</b> {appointment.fullName}</p>
           <p><b>Phone:</b> {appointment.phone}</p>
           <p><b>Service:</b> {appointment.service}</p>
           <p><b>Staff:</b> {appointment.staff}</p>
           <p><b>Date:</b> {appointment.date}</p>
           <p><b>Time:</b> {appointment.time}</p>
-
           <hr className="my-4" />
-
           <p className="text-lg font-semibold">
             Total: ₹{appointment.total}
           </p>
@@ -188,7 +234,6 @@ export default function PaymentPage() {
             {loading ? "Processing..." : "Confirm Payment"}
           </button>
         </div>
-
       </section>
     </main>
   );
