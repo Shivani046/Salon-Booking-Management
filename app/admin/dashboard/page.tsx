@@ -2,10 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
-  FaPen, FaTrash, FaSignOutAlt, FaUsers, FaCog, FaCalendarDay, FaRupeeSign, FaPlus,
-  FaSortAlphaDown, FaSortAlphaUp, FaTimes,
+  FaPen,
+  FaTrash,
+  FaSignOutAlt,
+  FaUsers,
+  FaCog,
+  FaCalendarDay,
+  FaRupeeSign,
+  FaPlus,
+  FaSortAlphaDown,
+  FaSortAlphaUp,
+  FaTimes,
 } from "react-icons/fa";
 
+// COLOR PALETTE
 const PALETTE = {
   sapphire: "#3C507D",
   royalBlue: "#112E50",
@@ -15,29 +25,24 @@ const PALETTE = {
 };
 
 export default function DashboardPage() {
-  // ---- Data States ----
+  // ---- TABS & STATE ----
   const [tab, setTab] = useState("dashboard");
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [serviceSort, setServiceSort] = useState<"az" | "za">("az");
   const [staffSort, setStaffSort] = useState<"az" | "za">("az");
-
-  // Services
   const [newService, setNewService] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [editingService, setEditingService] = useState<any | null>(null);
-
-  // Staff
   const [newStaff, setNewStaff] = useState("");
-
-  // --- Unified Edit Staff Modal ---
+  // Unified Edit Staff Modal
   const [editStaffModal, setEditStaffModal] = useState<any | null>(null);
   const [modalStaffName, setModalStaffName] = useState("");
   const [modalServiceAddId, setModalServiceAddId] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Quick Add Appointments (unchanged)
+  // Quick Add Appointment
   const [quickApp, setQuickApp] = useState({
     date: "",
     serviceId: "",
@@ -46,23 +51,42 @@ export default function DashboardPage() {
     amount: "",
   });
   const [quickAddMsg, setQuickAddMsg] = useState("");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => { loadAll(); }, []);
-  const loadAll = async () => { await Promise.all([loadAppointments(), loadServices(), loadStaff()]); };
+  const loadAll = async () => {
+    try {
+      await Promise.all([loadAppointments(), loadServices(), loadStaff()]);
+    } catch (err) {
+      setError("Could not load dashboard data");
+    }
+  };
   const loadAppointments = async () => {
-    const res = await fetch("/api/appointments");
-    setAppointments(await res.json());
+    try {
+      const res = await fetch("/api/appointments");
+      setAppointments(await res.json());
+    } catch {
+      setError("Could not load appointments");
+    }
   };
   const loadServices = async () => {
-    const res = await fetch("/api/services");
-    setServices(await res.json());
+    try {
+      const res = await fetch("/api/services");
+      setServices(await res.json());
+    } catch {
+      setError("Could not load services");
+    }
   };
   const loadStaff = async () => {
-    const res = await fetch("/api/staff?withServices=true");
-    setStaff(await res.json());
+    try {
+      const res = await fetch("/api/staff?withServices=true");
+      setStaff(await res.json());
+    } catch {
+      setError("Could not load staff");
+    }
   };
 
-  // Service CRUD
+  // Services CRUD
   const addService = async () => {
     if (!newService || !newPrice) return;
     await fetch("/api/services", {
@@ -97,13 +121,11 @@ export default function DashboardPage() {
     });
     setNewStaff(""); loadStaff();
   };
-
   const openEditStaffModal = (person: any) => {
     setEditStaffModal(person);
     setModalStaffName(person.name);
     setModalServiceAddId("");
   };
-
   const handleSaveEditStaff = async () => {
     setModalLoading(true);
     await fetch(`/api/staff?id=${editStaffModal.staffId}`, {
@@ -116,14 +138,12 @@ export default function DashboardPage() {
     setModalStaffName("");
     await loadStaff();
   };
-
   const handleDeleteStaff = async (staffId: number) => {
     if (!window.confirm("Delete this staff member?")) return;
     await fetch(`/api/staff?id=${staffId}`, { method: "DELETE" });
     await loadStaff();
   };
-
-  // Staff service assign/removal INSIDE MODAL
+  // Staff service assign/removal in Modal
   const handleAddServiceToModalStaff = async () => {
     if (!modalServiceAddId) return;
     setModalLoading(true);
@@ -148,7 +168,7 @@ export default function DashboardPage() {
     await loadStaff();
   };
 
-  // Analytics, sorting, and available assign services for modal
+  // Analytics, sorts, etc.
   const sortedServices = [...services].sort((a, b) =>
     serviceSort === "az"
       ? a.type.localeCompare(b.type)
@@ -168,8 +188,6 @@ export default function DashboardPage() {
             )
         )
       : [];
-
-  // Analytics cards setup
   const today = new Date().toISOString().slice(0, 10);
   const appointmentsToday = appointments.filter(
     (a) => a.appDate && a.appDate.slice(0, 10) === today
@@ -208,43 +226,29 @@ export default function DashboardPage() {
     window.location.href = "/login";
   };
 
-  // ==== RENDER ====
+  // --- MAIN RENDER ---
   return (
     <div className="min-h-screen w-full" style={{ background: PALETTE.swanWing }}>
       {/* HEADER BAR */}
-      <div
-        className="flex items-center justify-between px-8 py-6"
-        style={{ background: PALETTE.sapphire }}
-      >
+      <div className="flex items-center justify-between px-8 py-6" style={{ background: PALETTE.sapphire }}>
         <div className="flex items-center gap-3">
           <FaCog style={{ color: PALETTE.swanWing, fontSize: "28px" }} />
-          <span
-            className="text-2xl font-extrabold"
-            style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}
-          >
+          <span className="text-2xl font-extrabold" style={{ color: PALETTE.swanWing, letterSpacing: "0.02em" }}>
             Salon Admin
           </span>
-          <span className="text-sm" style={{ color: "#b6bed1" }}>
-            Business Dashboard
-          </span>
+          <span className="text-sm" style={{ color: "#b6bed1" }}>Business Dashboard</span>
         </div>
         <button
           onClick={logout}
           className="flex items-center gap-2 text-white"
           style={{
-            background: PALETTE.royalBlue,
-            padding: "10px 25px",
-            borderRadius: "10px",
-            fontWeight: "bold",
-            letterSpacing: "0.04em",
-            boxShadow: "0 2px 6px #112E5070",
-          }}
-        >
+            background: PALETTE.royalBlue, padding: "10px 25px", borderRadius: "10px",
+            fontWeight: "bold", letterSpacing: "0.04em", boxShadow: "0 2px 6px #112E5070"
+          }}>
           <FaSignOutAlt /> Logout
         </button>
       </div>
-
-      {/* TABS ... (same as your code) */}
+      {/* TABS */}
       <div className="flex gap-4 mt-8 px-10">
         {["dashboard", "appointments", "services", "staff"].map((t) => (
           <button
@@ -270,18 +274,288 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+      {error && <div className="bg-red-100 text-red-700 px-8 py-4 m-5 rounded">{error}</div>}
 
-      {/* ...Dashboard/Analytics/Services/Appointments unchanged... */}
+      {/* DASHBOARD SUMMARY */}
+      {tab === "dashboard" && (
+        <>
+          <div className="flex flex-wrap gap-7 items-center mt-9 px-10">
+            {analytics.map((a) => (
+              <div
+                key={a.label}
+                className="rounded-2xl flex-1 min-w-[210px] max-w-[320px] p-7 shadow-md flex gap-4 items-center border-l-[7px]"
+                style={{
+                  borderColor: a.color,
+                  background: a.bg,
+                  borderLeftWidth: 7,
+                  borderStyle: "solid",
+                }}>
+                <div className="rounded-full p-4" style={{ background: "#f1eedf", color: a.color }}>
+                  {a.icon}
+                </div>
+                <div>
+                  <div className="text-4xl font-extrabold" style={{ color: a.color }}>
+                    {a.count}
+                  </div>
+                  <div className="font-semibold mt-1" style={{ color: PALETTE.royalBlue }}>
+                    {a.label}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Today’s Appointments */}
+          <div className="mt-12 px-10">
+            <h2 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: PALETTE.royalBlue }}>
+              <FaCalendarDay /> Today's Appointments
+            </h2>
+            <div className="rounded-xl border shadow px-6 py-4"
+              style={{ background: PALETTE.swanWing, borderColor: PALETTE.shellstone }}>
+              <table className="w-full text-base">
+                <thead>
+                  <tr className="border-b" style={{ color: PALETTE.royalBlue, background: PALETTE.shellstone }}>
+                    <th className="py-3 text-left">Time</th>
+                    <th className="text-left">Service</th>
+                    <th className="text-left">Staff</th>
+                    <th className="text-left">Customer</th>
+                    <th className="text-left">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appointmentsToday.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center" style={{ color: PALETTE.royalBlue + "77" }}>
+                        No appointments today
+                      </td>
+                    </tr>
+                  ) : (
+                    appointmentsToday.map((a) => (
+                      <tr key={a.appId} className="border-b hover:opacity-90" style={{ borderColor: PALETTE.shellstone }}>
+                        <td className="py-3">{a.appTime || "--"}</td>
+                        <td>{a.service?.type || ""}</td>
+                        <td>{a.staff?.name || "-"}</td>
+                        <td>{a.customer?.name || "-"}</td>
+                        <td>₹{a.amount}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+      {/* APPOINTMENTS TAB */}
+      {tab === "appointments" && (
+        <div className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
+          style={{ background: PALETTE.swanWing, borderColor: PALETTE.shellstone }}>
+          <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>
+            All Appointments
+          </h2>
+          <table className="w-full text-base">
+            <thead>
+              <tr style={{ background: PALETTE.shellstone, color: PALETTE.royalBlue }}>
+                <th className="py-3 text-left">Date</th>
+                <th className="text-left">Service</th>
+                <th className="text-left">Staff</th>
+                <th className="text-left">Customer</th>
+                <th className="text-left">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {appointments.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center" style={{ color: PALETTE.royalBlue + "77" }}>
+                    No appointments found
+                  </td>
+                </tr>
+              ) : (
+                appointments.map((a) => (
+                  <tr key={a.appId} className="border-b hover:bg-[#e9e5df]" style={{ borderColor: PALETTE.shellstone }}>
+                    <td className="py-3">{a.appDate ? new Date(a.appDate).toLocaleDateString() : "-"}</td>
+                    <td>{a.service?.type || ""}</td>
+                    <td>{a.staff?.name || "-"}</td>
+                    <td>{a.customer?.name || "-"}</td>
+                    <td className="font-medium">₹{a.amount}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* SERVICES TAB */}
+      {tab === "services" && (
+        <div className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7" style={{
+          background: PALETTE.shellstone, borderColor: PALETTE.royalBlue,
+        }}>
+          <h2 className="font-semibold text-lg mb-5" style={{ color: PALETTE.royalBlue }}>
+            Services
+          </h2>
+          {/* FILTER/SORT */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="font-medium text-sm" style={{ color: PALETTE.royalBlue }}>
+              Sort by:
+            </span>
+            <button
+              onClick={() => setServiceSort("az")}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${
+                serviceSort === "az"
+                  ? "bg-[#3C507D] text-white"
+                  : "bg-white text-[#3C507D] border-[#3C507D]"
+              } hover:bg-[#3C507D]/10`}
+            >
+              <FaSortAlphaDown className="inline mr-1" />
+              A-Z
+            </button>
+            <button
+              onClick={() => setServiceSort("za")}
+              className={`px-3 py-1 rounded-lg border transition font-semibold text-sm ${
+                serviceSort === "za"
+                  ? "bg-[#3C507D] text-white"
+                  : "bg-white text-[#3C507D] border-[#3C507D]"
+              } hover:bg-[#3C507D]/10`}
+            >
+              <FaSortAlphaUp className="inline mr-1" />
+              Z-A
+            </button>
+          </div>
+          {/* ADD service */}
+          <div className="flex gap-3 mb-7">
+            <input
+              className="border rounded-lg px-3 py-2 w-1/3"
+              placeholder="Service name"
+              value={newService}
+              onChange={(e) => setNewService(e.target.value)}
+              style={{ borderColor: PALETTE.royalBlue }}
+            />
+            <input
+              className="border rounded-lg px-3 py-2 w-1/4"
+              placeholder="Price"
+              type="number"
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              style={{ borderColor: PALETTE.royalBlue }}
+            />
+            <button
+              onClick={addService}
+              className="px-6 py-2 rounded-lg font-semibold hover:opacity-85"
+              style={{
+                background: PALETTE.sapphire,
+                color: PALETTE.swanWing,
+              }}
+            >
+              Add
+            </button>
+          </div>
+          {/* EDIT SERVICE MODAL */}
+          {editingService && (
+            <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+              <div className="p-8 rounded-2xl shadow-xl w-full max-w-sm border-2"
+                style={{
+                  background: PALETTE.shellstone,
+                  borderColor: PALETTE.royalBlue,
+                }}>
+                <h3 className="font-bold text-lg mb-4"
+                  style={{ color: PALETTE.royalBlue }}>
+                  Edit Service
+                </h3>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mb-3"
+                  placeholder="Service name"
+                  value={editingService.type}
+                  onChange={(e) =>
+                    setEditingService((s: any) => ({
+                      ...s,
+                      type: e.target.value,
+                    }))
+                  }
+                  style={{ borderColor: PALETTE.royalBlue }}
+                />
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mb-5"
+                  placeholder="Price"
+                  type="number"
+                  value={editingService.price}
+                  onChange={(e) =>
+                    setEditingService((s: any) => ({
+                      ...s,
+                      price: e.target.value,
+                    }))
+                  }
+                  style={{ borderColor: PALETTE.royalBlue }}
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setEditingService(null)}
+                    className="px-4 py-2 rounded font-medium hover:opacity-80"
+                    style={{
+                      background: PALETTE.swanWing,
+                      color: PALETTE.royalBlue,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={updateService}
+                    className="px-4 py-2 rounded font-semibold hover:opacity-90"
+                    style={{
+                      background: PALETTE.sapphire,
+                      color: PALETTE.swanWing,
+                    }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          <table className="w-full text-base">
+            <thead>
+              <tr style={{ background: PALETTE.swanWing, color: PALETTE.royalBlue }}>
+                <th className="py-3 text-left">Service</th>
+                <th className="text-left">Price</th>
+                <th className="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedServices.map((s) => (
+                <tr
+                  key={s.serviceId}
+                  className="border-b hover:bg-[#e9e5df]"
+                  style={{ borderColor: PALETTE.royalBlue }}>
+                  <td className="py-3">{s.type}</td>
+                  <td>₹{s.price}</td>
+                  <td>
+                    <button
+                      onClick={() => startEditService(s)}
+                      className="inline-flex items-center mr-4"
+                      style={{ color: PALETTE.sapphire }}
+                      title="Edit"
+                    >
+                      <FaPen className="mr-1" /> Edit
+                    </button>
+                    <button
+                      onClick={() => deleteService(s.serviceId)}
+                      className="inline-flex items-center"
+                      style={{ color: PALETTE.royalBlue }}
+                      title="Delete"
+                    >
+                      <FaTrash className="mr-1" /> Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* STAFF TAB */}
       {tab === "staff" && (
-        <div
-          className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
-          style={{
-            background: PALETTE.shellstone,
-            borderColor: PALETTE.royalBlue,
-          }}>
-          
+        <div className="rounded-2xl shadow border mt-8 mx-10 px-8 py-7"
+          style={{ background: PALETTE.shellstone, borderColor: PALETTE.royalBlue }}>
           {/* Add staff */}
           <div className="flex gap-3 mb-7">
             <input
@@ -301,13 +575,9 @@ export default function DashboardPage() {
               Add
             </button>
           </div>
-          {/* TABLE */}
           <table className="w-full text-base">
             <thead>
-              <tr style={{
-                background: PALETTE.swanWing,
-                color: PALETTE.royalBlue,
-              }}>
+              <tr style={{ background: PALETTE.swanWing, color: PALETTE.royalBlue }}>
                 <th className="py-3 text-left">Name</th>
                 <th className="text-left w-60">Assigned Services</th>
                 <th className="text-left">Actions</th>
@@ -351,8 +621,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
-
-          {/* --- UNIFIED EDIT STAFF MODAL --- */}
+          {/* --- EDIT STAFF MODAL --- */}
           {editStaffModal && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
               <div className="rounded-2xl shadow-xl bg-[#faf6f0] border-2 border-[#112E50] px-8 py-6 min-w-[350px] max-w-[90vw] w-full md:w-[440px] relative">
