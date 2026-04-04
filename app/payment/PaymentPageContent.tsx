@@ -20,10 +20,6 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>("Cash at the salon");
 
-  const [serviceList, setServiceList] = useState<any[]>([]);
-  const [staffList, setStaffList] = useState<any[]>([]);
-
-  // AUTH
   useEffect(() => {
     const isLogged = localStorage.getItem("isLoggedIn");
     const name = localStorage.getItem("profileName");
@@ -31,26 +27,20 @@ export default function PaymentPage() {
     setProfileName(name || "User");
   }, []);
 
-  // Fetch services and staff once for mapping to IDs
-  useEffect(() => {
-    fetch("/api/services").then((r) => r.json()).then(setServiceList);
-    fetch("/api/staff").then((r) => r.json()).then(setStaffList);
-  }, []);
-
   const initials = useMemo(() => getInitials(profileName), [profileName]);
 
-  // GET PARAMS
-  const appointment = useMemo(() => {
-    return {
-      fullName: searchParams.get("fullName") || "",
-      phone: searchParams.get("phone") || "",
-      service: searchParams.get("service") || "",
-      staff: searchParams.get("staff") || "ANY",
-      date: searchParams.get("date") || "",
-      time: searchParams.get("time") || "",
-      total: searchParams.get("total") || "0",
-    };
-  }, [searchParams]);
+  // Get all params, including IDs
+  const appointment = useMemo(() => ({
+    fullName: searchParams.get("fullName") || "",
+    phone: searchParams.get("phone") || "",
+    service: searchParams.get("service") || "",
+    staff: searchParams.get("staff") || "ANY",
+    date: searchParams.get("date") || "",
+    time: searchParams.get("time") || "",
+    total: searchParams.get("total") || "0",
+    serviceId: searchParams.get("serviceId") || "",
+    staffId: searchParams.get("staffId") || "",
+  }), [searchParams]);
 
   if (!appointment.fullName) {
     return (
@@ -58,6 +48,13 @@ export default function PaymentPage() {
         No booking data found
       </div>
     );
+  }
+
+  // Utility: get YYYY-MM-DD into ISO string
+  function toDateStringISO(dateStr: string) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
   }
 
   async function onConfirm() {
@@ -74,37 +71,25 @@ export default function PaymentPage() {
         return;
       }
 
-      // 2. Map names to IDs
-      let serviceId: number | null = null;
+      // 2. Parse and send IDs
+      const serviceId = Number(appointment.serviceId);
       let staffId: number | null = null;
-
-      const matchedService = serviceList.find(
-        (s) => s.type.toLowerCase() === appointment.service.toLowerCase()
-      );
-      if (matchedService) serviceId = matchedService.serviceId;
-
-      if (
-        appointment.staff &&
-        appointment.staff !== "ANY"
-      ) {
-        const matchedStaff = staffList.find(
-          (s) => s.name.toLowerCase() === appointment.staff.toLowerCase()
-        );
-        if (matchedStaff) staffId = matchedStaff.staffId;
+      if (appointment.staffId && appointment.staffId !== "any") {
+        staffId = Number(appointment.staffId);
       }
 
       if (!serviceId) {
-        alert("Service not found. Please try again.");
+        alert("Invalid Service selection. Please go back and try again.");
         setLoading(false);
         return;
       }
 
-      // 3. Build booking payload
+      // POST body
       const payload: any = {
         customerId: Number(custId),
         serviceId,
-        staffId,                            // valid id or null
-        appDate: appointment.date,
+        staffId: staffId ?? 1, // default to 1st staff if null/not chosen; update logic as per your app!
+        appDate: toDateStringISO(appointment.date),
         appTime: appointment.time,
         amount: Number(appointment.total),
         status: "UPCOMING",
@@ -140,7 +125,6 @@ export default function PaymentPage() {
       });
 
       router.push(`/confirmed?${params.toString()}`);
-
     } catch (err: any) {
       console.error(err);
       alert("Booking failed. Try again.");
@@ -149,7 +133,7 @@ export default function PaymentPage() {
     }
   }
 
-  // UI
+  // UI unchanged
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
       {/* NAVBAR */}
