@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   const where: any = {};
   if (custId) {
-    where.custId = Number(custId);    // FIXED: use custId, not customerId
+    where.custId = Number(custId);    // Use your correct column here
   }
   if (q) {
     where.OR = [
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     take: 50,
     select: {
       appId: true,
-      custId: true,         // FIXED: return for debugging
+      // custId: true, // REMOVED to fix the build error
       service: {
         select: {
           serviceId: true,
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid appDate" }, { status: 400 });
     }
 
-    // Validate foreign key existence (update field names)
+    // Validate foreign key existence
     const [customer, service, staff] = await Promise.all([
       prisma.customer.findUnique({ where: { custId: custId } }),
       prisma.service.findUnique({ where: { serviceId } }),
