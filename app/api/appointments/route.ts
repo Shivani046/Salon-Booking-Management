@@ -54,6 +54,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+    console.log("POST Body:", data); // <--- ADD THIS LINE!
+    // ... rest of your code ...
 
     // frontend sends custId, DB expects customerId!
     const {
