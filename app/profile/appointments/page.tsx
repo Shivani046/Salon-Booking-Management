@@ -4,23 +4,21 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// For reschedule/cancel modals
 type ModalState =
   | { open: false }
   | { open: true; type: "reschedule"; appt: Appointment }
   | { open: true; type: "cancel"; appt: Appointment };
 
-// The internal type after mapping from DB
 type Appointment = {
   id: string;
   service: string;
-  dateStr: string; // YYYY-MM-DD for easy reschedule
-  timeStr: string; // "18:00"
-  dateLabel: string; // e.g. "APRIL 04"
-  timeLabel: string; // e.g. "06:00PM"
+  dateStr: string;
+  timeStr: string;
+  dateLabel: string;
+  timeLabel: string;
   staff: string;
   amount: string;
-  status: string; // "UPCOMING" | "COMPLETED" | "CANCELLED"
+  status: string;
 };
 
 const TIME_OPTIONS = [
@@ -49,24 +47,18 @@ function UserIcon() {
 export default function AppointmentsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
-
-  // All appointments loaded, split into two lists
   const [upcoming, setUpcoming] = useState<Appointment[]>([]);
   const [past, setPast] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Modal State for reschedule/cancel
   const [modal, setModal] = useState<ModalState>({ open: false });
-
-  // Reschedule state
-  const [editDate, setEditDate] = useState(""); // YYYY-MM-DD
+  const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editStaff, setEditStaff] = useState("Any staff");
 
-  // Load appointments of logged in user only
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const custId = localStorage.getItem("custId");
+    console.log("Loaded custId from localStorage:", custId); // <-- DEBUG ADD
     if (!loggedIn || !custId) {
       router.push("/login");
       return;
@@ -77,13 +69,13 @@ export default function AppointmentsPage() {
       try {
         const res = await fetch(`/api/appointments?custId=${custId}`);
         const dbApps: any[] = await res.json();
+        console.log("API returned appointments:", dbApps); // <-- DEBUG ADD
 
         const now = new Date();
         const upcomingArr: Appointment[] = [];
         const pastArr: Appointment[] = [];
 
         for (const a of dbApps) {
-          // Fix: Validate appDate and appTime before proceeding
           if (!a.appDate || !a.appTime) continue;
           const dateTimeString = `${a.appDate}T${a.appTime}`;
           const dt = new Date(dateTimeString);
@@ -91,16 +83,17 @@ export default function AppointmentsPage() {
 
           const staffName = a.staff?.name || "Any staff";
           const base: Appointment = {
-            id: a.appId || a.id,
+            id: a.appId?.toString() || a.id?.toString() || "",
             service: a.service?.type || "Service",
             dateStr: a.appDate,
             timeStr: a.appTime,
-            dateLabel: formatDateLabel(a.appDate), // uses safe version below
-            timeLabel: formatTimeLabel(a.appTime), // uses safe version below
+            dateLabel: formatDateLabel(a.appDate),
+            timeLabel: formatTimeLabel(a.appTime),
             staff: staffName,
             amount: `₹${a.amount}`,
             status: a.status || "UPCOMING",
           };
+
           if (dt >= now && base.status !== "CANCELLED" && base.status !== "COMPLETED") {
             upcomingArr.push(base);
           } else {
@@ -112,8 +105,9 @@ export default function AppointmentsPage() {
         }
         setUpcoming(upcomingArr.sort((a, b) => a.dateStr.localeCompare(b.dateStr)));
         setPast(pastArr.sort((a, b) => b.dateStr.localeCompare(a.dateStr)));
-      } catch {
-        setUpcoming([]); setPast([]);
+      } catch (e) {
+        setUpcoming([]);
+        setPast([]);
       }
       setLoading(false);
     }
@@ -140,7 +134,6 @@ export default function AppointmentsPage() {
     setModal({ open: true, type: "cancel", appt });
   }
 
-  // In-memory (UI) update, not DB: You can upgrade to call API as needed
   function saveReschedule() {
     if (!modal.open || modal.type !== "reschedule") return;
     if (!editDate || !editTime) {
@@ -164,7 +157,6 @@ export default function AppointmentsPage() {
     closeModal();
   }
 
-  // In-memory (UI) update, not DB: You can upgrade to call API as needed
   function confirmCancel() {
     if (!modal.open || modal.type !== "cancel") return;
     const appt = modal.appt;
@@ -202,9 +194,7 @@ export default function AppointmentsPage() {
           </div>
         </nav>
       </header>
-      {/* Layout */}
       <section className="mx-auto grid min-h-[calc(100vh-76px)] max-w-7xl grid-cols-1 md:grid-cols-[320px_1fr]">
-        {/* Sidebar */}
         <aside className="border-r border-black/10 bg-[#d9b7b2]/55">
           <nav className="flex h-full flex-col">
             <div className="px-10 py-6 text-left text-base font-semibold uppercase tracking-[0.14em] text-black/80">
@@ -219,11 +209,9 @@ export default function AppointmentsPage() {
             </div>
           </nav>
         </aside>
-        {/* Main */}
         <div className="bg-[#f7ecd8] px-6 py-10 md:px-12">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-semibold uppercase tracking-[0.12em]">My Appointments</h1>
-            {/* Tabs */}
             <div className="mt-6 flex items-center gap-4">
               <button
                 type="button"
@@ -271,7 +259,6 @@ export default function AppointmentsPage() {
           </div>
         </div>
       </section>
-      {/* Modal */}
       {modal.open ? (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 px-4"
@@ -458,8 +445,6 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
-// __________________ SAFER FORMATTERS - REPLACE THESE TWO ONLY! _____________________
-
 function formatDateLabel(dateStr: string) {
   if (!dateStr) return "Invalid Date";
   const d = new Date(dateStr + "T00:00:00");
@@ -470,7 +455,6 @@ function formatDateLabel(dateStr: string) {
 }
 
 function formatTimeLabel(time: string) {
-  // Expects "18:00" → "06:00PM"
   if (!time || !/^\d{2}:\d{2}$/.test(time)) return "Invalid Time";
   const [hr, min] = time.split(":").map(Number);
   if (isNaN(hr) || isNaN(min)) return "Invalid Time";
