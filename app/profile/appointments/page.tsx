@@ -57,9 +57,11 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const custId = localStorage.getItem("custId");
-    console.log("Loaded custId from localStorage:", custId); // <-- DEBUG ADD
-    if (!loggedIn || !custId) {
+    const custIdStr = localStorage.getItem("custId"); // DEBUG: always store as string in LS
+    const custId = Number(custIdStr);                 // <-- always number!
+    console.log("Loaded custId from localStorage:", custIdStr, "(as Number:", custId, ")"); // DEBUG
+
+    if (!loggedIn || !custIdStr || isNaN(custId)) {
       router.push("/login");
       return;
     }
@@ -67,9 +69,10 @@ export default function AppointmentsPage() {
     async function fetchAppointments() {
       setLoading(true);
       try {
+        console.log("Fetching for custId (number!):", custId); // DEBUG
         const res = await fetch(`/api/appointments?custId=${custId}`);
         const dbApps: any[] = await res.json();
-        console.log("API returned appointments:", dbApps); // <-- DEBUG ADD
+        console.log("API returned appointments:", dbApps); // DEBUG
 
         const now = new Date();
         const upcomingArr: Appointment[] = [];
