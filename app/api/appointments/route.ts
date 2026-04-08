@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: List appointments (by logged-in user or with filtering)
+// GET: Fetch appointments (optionally filtered by logged-in user)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   const where: any = {};
   if (custId) {
-    where.customerId = Number(custId); // Schema expects 'customerId'
+    where.customerId = Number(custId); // In DB/model it's customerId!
   }
   if (q) {
     where.OR = [
@@ -50,79 +50,63 @@ export async function GET(req: Request) {
   return NextResponse.json(appointments);
 }
 
-// POST: Create a new appointment, with full validation and explicit errors
+// POST: Create a new appointment with full coercion & error reporting
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    console.log("POST /api/appointments - received body:", data);
+    console.log("POST Body:", data);
 
-    // Accept input from frontend: custId; backend needs customerId
-    const {
-      custId,
-      serviceId,
-      staffId,
-      appDate,
-      appTime,
-      amount,
-      status,
-    } = data;
+    // Coerce values to correct types
+    const customerId = Number(data.custId);
+    const serviceId = Number(data.serviceId);
+    const staffId = Number(data.staffId);
+    const appDate = String(data.appDate);
+    const appTime = String(data.appTime);
+    const amount = Number(data.amount);
+    const status = String(data.status);
 
-    // Validate all fields for presence & type
-    if (!custId || typeof custId !== "number" || isNaN(Number(custId))) {
-      return NextResponse.json({ error: "Missing or invalid custId" }, { status: 400 });
+    console.log("Coerced values:", { customerId, serviceId, staffId, appDate, appTime, amount, status });
+
+    // Detailed validation
+    if (!customerId || isNaN(customerId)) {
+      return NextResponse.json({ error: "Missing or invalid custId/customerId" }, { status: 400 });
     }
-    if (!serviceId || typeof serviceId !== "number" || isNaN(Number(serviceId))) {
+    if (!serviceId || isNaN(serviceId)) {
       return NextResponse.json({ error: "Missing or invalid serviceId" }, { status: 400 });
     }
-    if (!staffId || typeof staffId !== "number" || isNaN(Number(staffId))) {
+    if (!staffId || isNaN(staffId)) {
       return NextResponse.json({ error: "Missing or invalid staffId" }, { status: 400 });
     }
-    if (!appDate || typeof appDate !== "string") {
+    if (!appDate || isNaN(new Date(appDate).getTime())) {
       return NextResponse.json({ error: "Missing or invalid appDate" }, { status: 400 });
     }
-    if (!appTime || typeof appTime !== "string" || !/^\d{2}:\d{2}$/.test(appTime)) {
-      return NextResponse.json({ error: "Missing or invalid appTime" }, { status: 400 });
+    if (!appTime || !/^\d{2}:\d{2}$/.test(appTime)) {
+      return NextResponse.json({ error: "Missing or invalid appTime (must be hh:mm)" }, { status: 400 });
     }
-    if (typeof amount !== "number" || isNaN(amount)) {
+    if (isNaN(amount)) {
       return NextResponse.json({ error: "Missing or invalid amount" }, { status: 400 });
     }
     if (!status || typeof status !== "string") {
       return NextResponse.json({ error: "Missing or invalid status" }, { status: 400 });
     }
 
-    // Final field data
-    const customerId = Number(custId);
-    const dateObj = new Date(appDate);
-    if (isNaN(dateObj.getTime())) {
-      return NextResponse.json({ error: "Invalid appDate format" }, { status: 400 });
-    }
-
-    // Foreign key checks: IDs must really exist!
+    // Foreign key existence checks
     const [customer, service, staff] = await Promise.all([
       prisma.customer.findUnique({ where: { custId: customerId } }),
       prisma.service.findUnique({ where: { serviceId } }),
       prisma.staff.findUnique({ where: { staffId } }),
     ]);
-    if (!customer) {
-      console.error(`Customer not found for custId=${customerId}.`);
-      return NextResponse.json({ error: "Customer not found" }, { status: 400 });
-    }
-    if (!service) {
-      console.error(`Service not found for serviceId=${serviceId}.`);
-      return NextResponse.json({ error: "Service not found" }, { status: 400 });
-    }
-    if (!staff) {
-      console.error(`Staff not found for staffId=${staffId}.`);
-      return NextResponse.json({ error: "Staff not found" }, { status: 400 });
-    }
+    if (!customer) return NextResponse.json({ error: `No customer found with custId=${customerId}` }, { status: 400 });
+    if (!service) return NextResponse.json({ error: `No service found with serviceId=${serviceId}` }, { status: 400 });
+    if (!staff) return NextResponse.json({ error: `No staff found with staffId=${staffId}` }, { status: 400 });
 
-    // Create appointment using proper foreign key name
+    // All valid - create appointment
     const appointment = await prisma.appointment.create({
       data: {
-        customerId, // corresponds to Appointment.customerId (FK)
+        customerId, // DB expects customerId, not custId!
         serviceId,
         staffId,
-        appDate: dateObj,
+        appDate: new Date(appDate),
         appTime,
         amount,
         status,
@@ -132,7 +116,6 @@ export async function POST(req: Request) {
     console.log("Appointment created:", appointment);
 
     return NextResponse.json({ success: true, appointment }, { status: 201 });
-
   } catch (e: any) {
     console.error("Unexpected server error:", e);
     return NextResponse.json(
