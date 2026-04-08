@@ -83,15 +83,20 @@ export default function AppointmentsPage() {
         const pastArr: Appointment[] = [];
 
         for (const a of dbApps) {
-          const dt = new Date(`${a.appDate}T${a.appTime}`);
+          // Fix: Validate appDate and appTime before proceeding
+          if (!a.appDate || !a.appTime) continue;
+          const dateTimeString = `${a.appDate}T${a.appTime}`;
+          const dt = new Date(dateTimeString);
+          if (isNaN(dt.getTime())) continue;
+
           const staffName = a.staff?.name || "Any staff";
           const base: Appointment = {
             id: a.appId || a.id,
             service: a.service?.type || "Service",
             dateStr: a.appDate,
             timeStr: a.appTime,
-            dateLabel: formatDateLabel(a.appDate),
-            timeLabel: formatTimeLabel(a.appTime),
+            dateLabel: formatDateLabel(a.appDate), // uses safe version below
+            timeLabel: formatTimeLabel(a.appTime), // uses safe version below
             staff: staffName,
             amount: `₹${a.amount}`,
             status: a.status || "UPCOMING",
@@ -453,8 +458,12 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
+// __________________ SAFER FORMATTERS - REPLACE THESE TWO ONLY! _____________________
+
 function formatDateLabel(dateStr: string) {
+  if (!dateStr) return "Invalid Date";
   const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return "Invalid Date";
   const month = d.toLocaleString("en-US", { month: "long" }).toUpperCase();
   const day = String(d.getDate()).padStart(2, "0");
   return `${month} ${day}`;
@@ -462,7 +471,9 @@ function formatDateLabel(dateStr: string) {
 
 function formatTimeLabel(time: string) {
   // Expects "18:00" → "06:00PM"
+  if (!time || !/^\d{2}:\d{2}$/.test(time)) return "Invalid Time";
   const [hr, min] = time.split(":").map(Number);
+  if (isNaN(hr) || isNaN(min)) return "Invalid Time";
   const h = hr % 12 === 0 ? 12 : hr % 12;
   const ampm = hr < 12 ? "AM" : "PM";
   return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}${ampm}`;
