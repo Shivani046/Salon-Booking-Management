@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: Fetch appointments (optionally filtered by logged-in user)
+// GET: Fetch appointments (optionally filtered by user)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
-  const custId = searchParams.get("custId"); // frontend sends custId
+  const custId = searchParams.get("custId"); // frontend uses custId
 
   const where: any = {};
-  if (custId) {
-    where.customerId = Number(custId); // In DB/model it's customerId!
-  }
+  if (custId) where.customerId = Number(custId); // DB expects customerId!
+
   if (q) {
     where.OR = [
-      { service: { is: { type: { contains: q, mode: "insensitive" as const } } } },
-      { staff: { is: { name: { contains: q, mode: "insensitive" as const } } } },
-      { status: { contains: q, mode: "insensitive" as const } },
+      { service: { is: { type: { contains: q, mode: "insensitive" as const }}}},
+      { staff: { is: { name: { contains: q, mode: "insensitive" as const }}}},
+      { status: { contains: q, mode: "insensitive" as const }},
     ];
   }
 
@@ -32,31 +31,31 @@ export async function GET(req: Request) {
           type: true,
           category: true,
           price: true,
-        },
+        }
       },
       staff: {
         select: {
           staffId: true,
           name: true,
-        },
+        }
       },
       appDate: true,
       appTime: true,
       status: true,
       amount: true,
-    },
+    }
   });
 
   return NextResponse.json(appointments);
 }
 
-// POST: Create a new appointment with full coercion & error reporting
+// POST: Create a new appointment with strict validation, clear responses & full logging
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    console.log("POST Body:", data);
+    console.log("POST /api/appointments body:", data);
 
-    // Coerce values to correct types
+    // Type coercion and validation
     const customerId = Number(data.custId);
     const serviceId = Number(data.serviceId);
     const staffId = Number(data.staffId);
@@ -65,61 +64,56 @@ export async function POST(req: Request) {
     const amount = Number(data.amount);
     const status = String(data.status);
 
+    // Log coerced values for troubleshooting
     console.log("Coerced values:", { customerId, serviceId, staffId, appDate, appTime, amount, status });
 
-    // Detailed validation
-    if (!customerId || isNaN(customerId)) {
-      return NextResponse.json({ error: "Missing or invalid custId/customerId" }, { status: 400 });
-    }
-    if (!serviceId || isNaN(serviceId)) {
-      return NextResponse.json({ error: "Missing or invalid serviceId" }, { status: 400 });
-    }
-    if (!staffId || isNaN(staffId)) {
-      return NextResponse.json({ error: "Missing or invalid staffId" }, { status: 400 });
-    }
-    if (!appDate || isNaN(new Date(appDate).getTime())) {
-      return NextResponse.json({ error: "Missing or invalid appDate" }, { status: 400 });
-    }
-    if (!appTime || !/^\d{2}:\d{2}$/.test(appTime)) {
-      return NextResponse.json({ error: "Missing or invalid appTime (must be hh:mm)" }, { status: 400 });
-    }
-    if (isNaN(amount)) {
-      return NextResponse.json({ error: "Missing or invalid amount" }, { status: 400 });
-    }
-    if (!status || typeof status !== "string") {
-      return NextResponse.json({ error: "Missing or invalid status" }, { status: 400 });
-    }
+    // Validation with explicit errors
+    if (!customerId || isNaN(customerId)) return err("Missing or invalid customerId (custId).");
+    if (!serviceId || isNaN(serviceId)) return err("Missing or invalid serviceId.");
+    if (!staffId || isNaN(staffId)) return err("Missing or invalid staffId.");
+    if (!appDate || isNaN(new Date(appDate).getTime())) return err("Missing or invalid appDate.");
+    if (!appTime || !/^\d{2}:\d{2}$/.test(appTime)) return err("Missing or invalid appTime (required: HH:MM).");
+    if (isNaN(amount)) return err("Missing or invalid amount.");
+    if (!status || typeof status !== "string") return err("Missing or invalid status.");
 
-    // Foreign key existence checks
+    // Lookup all the relevant foreign keys in one trip
     const [customer, service, staff] = await Promise.all([
       prisma.customer.findUnique({ where: { custId: customerId } }),
       prisma.service.findUnique({ where: { serviceId } }),
       prisma.staff.findUnique({ where: { staffId } }),
     ]);
-    if (!customer) return NextResponse.json({ error: `No customer found with custId=${customerId}` }, { status: 400 });
-    if (!service) return NextResponse.json({ error: `No service found with serviceId=${serviceId}` }, { status: 400 });
-    if (!staff) return NextResponse.json({ error: `No staff found with staffId=${staffId}` }, { status: 400 });
 
-    // All valid - create appointment
+    if (!customer) return err(`No customer found with custId=${customerId}.`);
+    if (!service)  return err(`No service found with serviceId=${serviceId}.`);
+    if (!staff)    return err(`No staff found with staffId=${staffId}.`);
+
+    // Create the appointment!
     const appointment = await prisma.appointment.create({
       data: {
-        customerId, // DB expects customerId, not custId!
+        customerId,  // Appointment model field is customerId!
         serviceId,
         staffId,
         appDate: new Date(appDate),
         appTime,
         amount,
         status,
-      },
+      }
     });
 
-    console.log("Appointment created:", appointment);
+    console.log("Appointment successfully created:", appointment);
 
     return NextResponse.json({ success: true, appointment }, { status: 201 });
+
+    // Helper: error response with logging
+    function err(message: string) {
+      console.error("[APPT CREATE ERROR]", message);
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
   } catch (e: any) {
-    console.error("Unexpected server error:", e);
+    console.error("API SERVER ERROR:", e);
     return NextResponse.json(
-      { error: e?.message || "Server error" },
+      { error: e?.message || "Unknown server error" },
       { status: 500 }
     );
   }
