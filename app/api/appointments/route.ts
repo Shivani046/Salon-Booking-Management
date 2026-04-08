@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: Fetch appointments (optionally filtered by user)
+// GET: Fetch appointments (optionally filtered by logged-in user)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
-  const custId = searchParams.get("custId"); // frontend uses custId
+  const custId = searchParams.get("custId");
 
   const where: any = {};
-  if (custId) where.customerId = Number(custId); // DB expects customerId!
-
+  if (custId && !isNaN(Number(custId))) {
+    where.customerId = Number(custId);
+  }
   if (q) {
     where.OR = [
       { service: { is: { type: { contains: q, mode: "insensitive" as const }}}},
@@ -55,8 +56,9 @@ export async function POST(req: Request) {
     const data = await req.json();
     console.log("POST /api/appointments body:", data);
 
-    // Type coercion and validation
-    const customerId = Number(data.custId);
+    // --- Force number for customerId from custId ---
+    const custIdRaw = data.custId ?? "";
+    const customerId = custIdRaw !== "" && custIdRaw !== null && !isNaN(Number(custIdRaw)) ? Number(custIdRaw) : NaN;
     const serviceId = Number(data.serviceId);
     const staffId = Number(data.staffId);
     const appDate = String(data.appDate);
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
     // Create the appointment!
     const appointment = await prisma.appointment.create({
       data: {
-        customerId,  // Appointment model field is customerId!
+        customerId,
         serviceId,
         staffId,
         appDate: new Date(appDate),

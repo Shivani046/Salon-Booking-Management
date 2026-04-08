@@ -86,15 +86,15 @@ export default function PaymentPage() {
 
       // POST body
       const payload: any = {
-        customerId: Number(custId),
-        serviceId,
-        staffId: staffId ?? 1, // default to 1st staff if null/not chosen; update logic as per your app!
-        appDate: toDateStringISO(appointment.date),
-        appTime: appointment.time,
-        amount: Number(appointment.total),
-        status: "UPCOMING",
-        paymentMethod: method,
-      };
+  custId: Number(custId),       // <--- This is what your backend expects!
+  serviceId,
+  staffId: staffId ?? 1,
+  appDate: toDateStringISO(appointment.date),
+  appTime: appointment.time,
+  amount: Number(appointment.total),
+  status: "UPCOMING",
+  paymentMethod: method,
+};
 
       // 4. Send booking POST
       const res = await fetch("/api/appointments", {
