@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: List appointments (optionally by customerId or search q)
+// GET: List appointments (supports customer filtering and optional query search)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   const where: any = {};
   if (custId) {
-    where.customerId = Number(custId); // Prisma field is customerId
+    where.customerId = Number(custId); // Prisma expects customerId
   }
   if (q) {
     where.OR = [
@@ -55,9 +55,9 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // The frontend should send custId, but the DB field is customerId!
+    // frontend sends custId, DB expects customerId!
     const {
-      custId,      // from frontend
+      custId,
       serviceId,
       staffId,
       appDate,
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       status,
     } = data;
 
+    // Validate required fields
     if (
       !custId ||
       !serviceId ||
@@ -75,32 +76,29 @@ export async function POST(req: Request) {
       typeof amount !== "number" ||
       !status
     ) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Parse date
+    // Validate date
     const dateObj = new Date(appDate);
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json({ error: "Invalid appDate" }, { status: 400 });
     }
 
-    // Validate foreign key existence
+    // Validate foreign keys exist
     const [customer, service, staff] = await Promise.all([
       prisma.customer.findUnique({ where: { custId: Number(custId) } }),
       prisma.service.findUnique({ where: { serviceId } }),
       prisma.staff.findUnique({ where: { staffId } }),
     ]);
     if (!customer) return NextResponse.json({ error: "Invalid custId" }, { status: 400 });
-    if (!service) return NextResponse.json({ error: "Invalid serviceId" }, { status: 400 });
-    if (!staff) return NextResponse.json({ error: "Invalid staffId" }, { status: 400 });
+    if (!service)  return NextResponse.json({ error: "Invalid serviceId" }, { status: 400 });
+    if (!staff)    return NextResponse.json({ error: "Invalid staffId" }, { status: 400 });
 
-    // Create appointment (use the correct Prisma field!)
+    // Create appointment (DB field is customerId)
     const appointment = await prisma.appointment.create({
       data: {
-        customerId: Number(custId), // model field is customerId, use this
+        customerId: Number(custId), // Correct DB field!
         serviceId,
         staffId,
         appDate: dateObj,
