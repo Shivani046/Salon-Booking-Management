@@ -180,10 +180,6 @@ export default function ServicesPage() {
                             <p className="truncate text-lg font-medium text-[#23181a] md:text-[1.15rem]">
                               {item.name}
                             </p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#7b6e68]">
-                              {item.duration}
-                              {item.note ? ` • ${item.note}` : ""}
-                            </p>
                           </div>
                           <p className="text-lg font-semibold text-[#23181a] md:text-[1.15rem]">
                             {item.price}
