@@ -16,77 +16,7 @@ type ServiceGroup = {
 };
 
 const serviceGroups: ServiceGroup[] = [
-  {
-    name: "Hair",
-    description: "Cuts, color, and treatments tailored to your length, texture, and finish.",
-    items: [
-      { name: "Haircut", price: "500/-" },
-      { name: "Blow Dry & Styling", price: "700/-" },
-      { name: "Hair Spa", price: "900/-" },
-      { name: "Root Touch-up", price: "800/-" },
-      { name: "Global Hair Color", price: "1200/-" },
-      { name: "Highlights / Balayage", price: "2500/-"},
-      { name: "Keratin / Smoothening", price: "3500/-"},
-      { name: "Head Massage", price: "300/-" },
-    ],
-  },
-  {
-    name: "Skin",
-    description: "Glow-focused facials and rituals designed for balance, clarity, and radiance.",
-    items: [
-      { name: "Cleanup", price: "300/-" },
-      { name: "Detan", price: "400/-"},
-      { name: "Fruit Facial", price: "600/-" },
-      { name: "Anti-Acne Facial", price: "900/-" },
-      { name: "Anti-Ageing Facial", price: "1100/-" },
-      { name: "Hydra Facial", price: "1500/-" },
-      { name: "Brightening Mask Ritual", price: "750/-" },
-    ],
-  },
-  {
-    name: "Nails",
-    description: "Clean nail care with long-lasting finishes and elegant detailing.",
-    items: [
-      { name: "Manicure", price: "1200/-" },
-      { name: "Pedicure", price: "1400/-"},
-      { name: "Gel Polish", price: "1800/-" },
-      { name: "Nail Extensions", price: "2800/-" },
-      { name: "Nail Art (Basic)", price: "2200/-" },
-      { name: "Nail Art (Premium)", price: "3200/-"},
-      { name: "Nail Repair (per nail)", price: "200/-" },
-    ],
-  },
-  {
-    name: "Waxing",
-    description: "Gentle, hygienic waxing for smooth skin and long-lasting results.",
-    items: [
-      { name: "Underarms", price: "150/-" },
-      { name: "Full Arms", price: "350/-" },
-      { name: "Half Legs", price: "450/-"},
-      { name: "Full Legs", price: "700/-" },
-      { name: "Full Body", price: "1800/-" },
-    ],
-  },
-  {
-    name: "Threading",
-    description: "Precise shaping for a clean, defined look.",
-    items: [
-      { name: "Eyebrows", price: "60/-" },
-      { name: "Upper Lip", price: "40/-" },
-      { name: "Forehead", price: "40/-" },
-      { name: "Full Face", price: "200/-" },
-    ],
-  },
-  {
-    name: "Makeup",
-    description: "Event-ready makeup with a finish that lasts in photos and real life.",
-    items: [
-      { name: "Party Makeup", price: "1800/-" },
-      { name: "Engagement Makeup", price: "3500/-"},
-      { name: "Bridal Makeup", price: "8000/-" },
-      { name: "Saree Draping", price: "800/-" },
-    ],
-  },
+  // ... your serviceGroups code here (unchanged) ...
 ];
 
 function getInitials(name: string) {
@@ -192,50 +122,53 @@ export default function ServicesPage() {
               ))}
             </div>
             
-            {/* Sidebar - sticky and matched to content! */}
-            <aside className="self-start sticky top-8 w-full md:max-w-xs">
-              {/* Booking Notes (beige box) */}
-              <div className="rounded-[24px] border border-[#eadcc6] bg-white/60 p-6 shadow-[0_16px_40px_rgba(88,65,36,0.10)] mb-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#a24e5f]">
-                    Booking Notes
-                  </p>
-                  <h3 className="mt-3 text-2xl font-semibold">
-                    Plan your appointment with ease
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-[#746965]">
-                    Services can be customized based on length, detailing, or skin concerns. Final
-                    pricing may vary after consultation.
-                  </p>
+            {/* Sticky sidebar: both boxes move together */}
+            <div className="sticky top-8 self-start w-full md:max-w-xs">
+              <div>
+                {/* Booking Notes (beige box) */}
+                <div className="rounded-[24px] border border-[#eadcc6] bg-white/60 p-6 shadow-[0_16px_40px_rgba(88,65,36,0.10)] mb-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#a24e5f]">
+                      Booking Notes
+                    </p>
+                    <h3 className="mt-3 text-2xl font-semibold">
+                      Plan your appointment with ease
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-[#746965]">
+                      Services can be customized based on length, detailing, or skin concerns. Final
+                      pricing may vary after consultation.
+                    </p>
+                  </div>
+                  <div className="mt-6 rounded-[20px] bg-[#fff9f2] p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#cb7885]">
+                      Included
+                    </p>
+                    <ul className="mt-4 space-y-3 text-sm leading-6 text-[#6f6460]">
+                      <li>• Personalized consultation before your service</li>
+                      <li>• Premium salon products and professional finishing</li>
+                      <li>• Guidance for after-care and maintenance</li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="mt-6 rounded-[20px] bg-[#fff9f2] p-5">
-                  <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#cb7885]">
-                    Included
-                  </p>
-                  <ul className="mt-4 space-y-3 text-sm leading-6 text-[#6f6460]">
-                    <li>• Personalized consultation before your service</li>
-                    <li>• Premium salon products and professional finishing</li>
-                    <li>• Guidance for after-care and maintenance</li>
-                  </ul>
-                </div>
-              </div>
 
-              {/* Ready to book? (green box) */}
-              <div className="rounded-[20px] bg-[#98a07b] px-5 py-6 text-white shadow-[0_14px_34px_rgba(88,65,36,0.18)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
-                  Ready to book?
-                </p>
-                <p className="mt-3 text-lg font-semibold leading-8">
-                  Sign in to request an appointment and we’ll confirm your preferred time.
-                </p>
-                <Link
-                  href={loggedIn ? "/book" : "/login"}
-                  className="mt-5 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.16em] text-[#6a7052] transition hover:bg-[#fff7ef]"
-                >
-                  {loggedIn ? "Continue to booking" : "Continue to login"}
-                </Link>
+                {/* Ready to book? (green box) */}
+                <div className="rounded-[20px] bg-[#98a07b] px-5 py-6 text-white shadow-[0_14px_34px_rgba(88,65,36,0.18)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
+                    Ready to book?
+                  </p>
+                  <p className="mt-3 text-lg font-semibold leading-8">
+                    Sign in to request an appointment and we’ll confirm your preferred time.
+                  </p>
+                  <Link
+                    href={loggedIn ? "/book" : "/login"}
+                    className="mt-5 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.16em] text-[#6a7052] transition hover:bg-[#fff7ef]"
+                  >
+                    {loggedIn ? "Continue to booking" : "Continue to login"}
+                  </Link>
+                </div>
               </div>
-            </aside>
+            </div>
+            {/* End sticky sidebar */}
           </div>
         </div>
       </section>
