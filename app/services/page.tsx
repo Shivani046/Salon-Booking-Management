@@ -4,12 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-
 type ServiceItem = {
   name: string;
   price: string;
-  duration: string;
-  note?: string;
 };
 
 type ServiceGroup = {
@@ -23,71 +20,71 @@ const serviceGroups: ServiceGroup[] = [
     name: "Hair",
     description: "Cuts, color, and treatments tailored to your length, texture, and finish.",
     items: [
-      { name: "Haircut", price: "500/-", duration: "45 min" },
-      { name: "Blow Dry & Styling", price: "700/-", duration: "40 min" },
-      { name: "Hair Spa", price: "900/-", duration: "60 min" },
-      { name: "Root Touch-up", price: "800/-", duration: "60 min" },
-      { name: "Global Hair Color", price: "1200/-", duration: "90 min" },
-      { name: "Highlights / Balayage", price: "2500/-", duration: "150 min", note: "Starts from" },
-      { name: "Keratin / Smoothening", price: "3500/-", duration: "180 min", note: "Starts from" },
-      { name: "Head Massage", price: "300/-", duration: "20 min" },
+      { name: "Haircut", price: "500/-" },
+      { name: "Blow Dry & Styling", price: "700/-" },
+      { name: "Hair Spa", price: "900/-" },
+      { name: "Root Touch-up", price: "800/-" },
+      { name: "Global Hair Color", price: "1200/-" },
+      { name: "Highlights / Balayage", price: "2500/-"},
+      { name: "Keratin / Smoothening", price: "3500/-"},
+      { name: "Head Massage", price: "300/-" },
     ],
   },
   {
     name: "Skin",
     description: "Glow-focused facials and rituals designed for balance, clarity, and radiance.",
     items: [
-      { name: "Cleanup", price: "300/-", duration: "30 min" },
-      { name: "Detan", price: "400/-", duration: "30 min" },
-      { name: "Fruit Facial", price: "600/-", duration: "45 min" },
-      { name: "Anti-Acne Facial", price: "900/-", duration: "60 min" },
-      { name: "Anti-Ageing Facial", price: "1100/-", duration: "70 min" },
-      { name: "Hydra Facial", price: "1500/-", duration: "60 min" },
-      { name: "Brightening Mask Ritual", price: "750/-", duration: "35 min" },
+      { name: "Cleanup", price: "300/-" },
+      { name: "Detan", price: "400/-"},
+      { name: "Fruit Facial", price: "600/-" },
+      { name: "Anti-Acne Facial", price: "900/-" },
+      { name: "Anti-Ageing Facial", price: "1100/-" },
+      { name: "Hydra Facial", price: "1500/-" },
+      { name: "Brightening Mask Ritual", price: "750/-" },
     ],
   },
   {
     name: "Nails",
     description: "Clean nail care with long-lasting finishes and elegant detailing.",
     items: [
-      { name: "Manicure", price: "1200/-", duration: "50 min" },
-      { name: "Pedicure", price: "1400/-", duration: "60 min" },
-      { name: "Gel Polish", price: "1800/-", duration: "60 min" },
-      { name: "Nail Extensions", price: "2800/-", duration: "90 min", note: "Starts from" },
-      { name: "Nail Art (Basic)", price: "2200/-", duration: "75 min" },
-      { name: "Nail Art (Premium)", price: "3200/-", duration: "90 min" },
-      { name: "Nail Repair (per nail)", price: "200/-", duration: "10 min" },
+      { name: "Manicure", price: "1200/-" },
+      { name: "Pedicure", price: "1400/-"},
+      { name: "Gel Polish", price: "1800/-" },
+      { name: "Nail Extensions", price: "2800/-" },
+      { name: "Nail Art (Basic)", price: "2200/-" },
+      { name: "Nail Art (Premium)", price: "3200/-"},
+      { name: "Nail Repair (per nail)", price: "200/-" },
     ],
   },
   {
     name: "Waxing",
     description: "Gentle, hygienic waxing for smooth skin and long-lasting results.",
     items: [
-      { name: "Underarms", price: "150/-", duration: "10 min" },
-      { name: "Full Arms", price: "350/-", duration: "20 min" },
-      { name: "Half Legs", price: "450/-", duration: "25 min" },
-      { name: "Full Legs", price: "700/-", duration: "40 min" },
-      { name: "Full Body", price: "1800/-", duration: "90 min", note: "Starts from" },
+      { name: "Underarms", price: "150/-" },
+      { name: "Full Arms", price: "350/-" },
+      { name: "Half Legs", price: "450/-"},
+      { name: "Full Legs", price: "700/-" },
+      { name: "Full Body", price: "1800/-" },
     ],
   },
   {
     name: "Threading",
     description: "Precise shaping for a clean, defined look.",
     items: [
-      { name: "Eyebrows", price: "60/-", duration: "10 min" },
-      { name: "Upper Lip", price: "40/-", duration: "5 min" },
-      { name: "Forehead", price: "40/-", duration: "5 min" },
-      { name: "Full Face", price: "200/-", duration: "20 min" },
+      { name: "Eyebrows", price: "60/-" },
+      { name: "Upper Lip", price: "40/-" },
+      { name: "Forehead", price: "40/-" },
+      { name: "Full Face", price: "200/-" },
     ],
   },
   {
     name: "Makeup",
     description: "Event-ready makeup with a finish that lasts in photos and real life.",
     items: [
-      { name: "Party Makeup", price: "1800/-", duration: "60 min" },
-      { name: "Engagement Makeup", price: "3500/-", duration: "90 min" },
-      { name: "Bridal Makeup", price: "8000/-", duration: "150 min", note: "Starts from" },
-      { name: "Saree Draping", price: "800/-", duration: "30 min" },
+      { name: "Party Makeup", price: "1800/-" },
+      { name: "Engagement Makeup", price: "3500/-"},
+      { name: "Bridal Makeup", price: "8000/-" },
+      { name: "Saree Draping", price: "800/-" },
     ],
   },
 ];
@@ -114,35 +111,22 @@ export default function ServicesPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
-      {/* Navbar (same style as Home/Login) */}
+      {/* Navbar */}
       <header className="bg-[#cb7885] text-black shadow-[0_8px_18px_rgba(98,46,56,0.14)]">
         <nav className="flex items-center justify-between px-6 py-4 md:px-10 lg:px-12">
           <Link href="/" className="text-[1.55rem] font-semibold tracking-[0.04em]">
             ERAILE BEAUTY
           </Link>
-
           <div className="hidden items-center gap-8 text-[0.92rem] font-medium uppercase tracking-[0.12em] md:flex">
-            <Link href="/" className="transition hover:opacity-75">
-              Home
-            </Link>
-            <Link href="/services" className="transition hover:opacity-75">
-              Services
-            </Link>
-            <Link href="/book" className="transition hover:opacity-75">
-              Book
-            </Link>
-            <Link href="/contact" className="transition hover:opacity-75">
-              Contact
-            </Link>
-
-            {/* initials avatar -> goes to profile */}
+            <Link href="/" className="transition hover:opacity-75">Home</Link>
+            <Link href="/services" className="transition hover:opacity-75">Services</Link>
+            <Link href="/book" className="transition hover:opacity-75">Book</Link>
+            <Link href="/contact" className="transition hover:opacity-75">Contact</Link>
             {!loggedIn ? (
               <Link
                 href="/login"
                 className="rounded-full bg-white/80 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-[#8f3c4e] shadow-sm transition hover:bg-white"
-              >
-                Login
-              </Link>
+              >Login</Link>
             ) : (
               <button
                 type="button"
@@ -161,12 +145,8 @@ export default function ServicesPage() {
       <section className="mx-auto max-w-6xl px-6 pb-12 pt-12 md:px-10 md:pt-16">
         <div className="rounded-[28px] border border-[#eadcc6] bg-[#f8ecd8]/75 px-6 py-10 shadow-[0_22px_60px_rgba(88,65,36,0.10)] md:px-14 md:py-14">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.38em] text-[#a24e5f]">
-              Signature Menu
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-[0.03em] md:text-5xl">
-              Services
-            </h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.38em] text-[#a24e5f]">Signature Menu</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[0.03em] md:text-5xl">Services</h1>
             <p className="mx-auto mt-4 max-w-2xl text-base text-[#7f7370] md:text-xl">
               Browse our catalog and choose what fits you best. Final pricing may vary after
               consultation.
@@ -189,7 +169,6 @@ export default function ServicesPage() {
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7b6e68]">
                     {group.description}
                   </p>
-
                   <div className="mt-5 space-y-4">
                     {group.items.map((item) => (
                       <div
@@ -206,7 +185,6 @@ export default function ServicesPage() {
                               {item.note ? ` • ${item.note}` : ""}
                             </p>
                           </div>
-
                           <p className="text-lg font-semibold text-[#23181a] md:text-[1.15rem]">
                             {item.price}
                           </p>
@@ -217,33 +195,36 @@ export default function ServicesPage() {
                 </section>
               ))}
             </div>
-
-            {/* Sidebar */}
-            <aside className="space-y-5 rounded-[24px] border border-[#eadcc6] bg-white/60 p-6 shadow-[0_16px_40px_rgba(88,65,36,0.10)]">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#a24e5f]">
-                  Booking Notes
-                </p>
-                <h3 className="mt-3 text-2xl font-semibold">
-                  Plan your appointment with ease
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-[#746965]">
-                  Services can be customized based on length, detailing, or skin concerns. Final
-                  pricing may vary after consultation.
-                </p>
+            
+            {/* Sidebar - sticky and matched to content! */}
+            <aside className="self-start sticky top-8 w-full md:max-w-xs">
+              {/* Booking Notes (beige box) */}
+              <div className="rounded-[24px] border border-[#eadcc6] bg-white/60 p-6 shadow-[0_16px_40px_rgba(88,65,36,0.10)] mb-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#a24e5f]">
+                    Booking Notes
+                  </p>
+                  <h3 className="mt-3 text-2xl font-semibold">
+                    Plan your appointment with ease
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-[#746965]">
+                    Services can be customized based on length, detailing, or skin concerns. Final
+                    pricing may vary after consultation.
+                  </p>
+                </div>
+                <div className="mt-6 rounded-[20px] bg-[#fff9f2] p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#cb7885]">
+                    Included
+                  </p>
+                  <ul className="mt-4 space-y-3 text-sm leading-6 text-[#6f6460]">
+                    <li>• Personalized consultation before your service</li>
+                    <li>• Premium salon products and professional finishing</li>
+                    <li>• Guidance for after-care and maintenance</li>
+                  </ul>
+                </div>
               </div>
 
-              <div className="rounded-[20px] bg-[#fff9f2] p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#cb7885]">
-                  Included
-                </p>
-                <ul className="mt-4 space-y-3 text-sm leading-6 text-[#6f6460]">
-                  <li>• Personalized consultation before your service</li>
-                  <li>• Premium salon products and professional finishing</li>
-                  <li>• Guidance for after-care and maintenance</li>
-                </ul>
-              </div>
-
+              {/* Ready to book? (green box) */}
               <div className="rounded-[20px] bg-[#98a07b] px-5 py-6 text-white shadow-[0_14px_34px_rgba(88,65,36,0.18)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
                   Ready to book?

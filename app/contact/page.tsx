@@ -222,10 +222,6 @@ export default function ContactPage() {
               >
                 Send Message
               </button>
-
-              <p className="text-center text-xs text-white/85">
-                Demo only — no backend connected yet.
-              </p>
             </form>
           </div>
         </div>
