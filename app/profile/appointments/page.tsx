@@ -83,10 +83,17 @@ export default function AppointmentsPage() {
         const upcomingArr: Appointment[] = [];
         const pastArr: Appointment[] = [];
 
+        // ------ This block robustly parses your API's appDate format ------
         for (const a of onlyMine) {
-          if (!a.appDate || !a.appTime) continue;
-          // Parse date and time safely
-          const dateTimeString = `${a.appDate}T${a.appTime}`;
+          // Robust ISO parsing ("2024-04-13T00:00:00.000Z") → "2024-04-13"
+          let appDateStr = a.appDate;
+          let appTimeStr = a.appTime;
+          if (typeof appDateStr === "string" && appDateStr.includes("T")) {
+            appDateStr = appDateStr.slice(0, 10);
+          }
+
+          if (!appDateStr || !appTimeStr) continue;
+          const dateTimeString = `${appDateStr}T${appTimeStr}`;
           const dt = new Date(dateTimeString);
           if (isNaN(dt.getTime())) continue;
 
@@ -94,10 +101,10 @@ export default function AppointmentsPage() {
           const base: Appointment = {
             id: a.appId?.toString() || a.id?.toString() || "",
             service: a.service?.type || a.serviceType || "Service",
-            dateStr: a.appDate,
-            timeStr: a.appTime,
-            dateLabel: formatDateLabel(a.appDate),
-            timeLabel: formatTimeLabel(a.appTime),
+            dateStr: appDateStr,
+            timeStr: appTimeStr,
+            dateLabel: formatDateLabel(appDateStr),
+            timeLabel: formatTimeLabel(appTimeStr),
             staff: staffName,
             amount: `₹${a.amount}`,
             status: a.status || "UPCOMING",
@@ -112,6 +119,8 @@ export default function AppointmentsPage() {
             });
           }
         }
+        // -------------------------------
+
         setUpcoming(upcomingArr.sort((a, b) => a.dateStr.localeCompare(b.dateStr)));
         setPast(pastArr.sort((a, b) => b.dateStr.localeCompare(a.dateStr)));
       } catch (e) {
