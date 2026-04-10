@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: Fetch all payment records for a specific user
+// GET: Fetch all payment/bill records for a specific user (Billing History)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -29,15 +29,14 @@ export async function GET(req: Request) {
       }
     });
 
-    // ------ FIXED DATE FORMATTING -------
-    const formatted = payments.map((p) => {
+    // DATE FORMATTING: safe, no 'slice', works for string and Date types.
+    const formatted = payments.map((p: any) => {
       let appDateString = "";
       const rawAppDate = p.appointment?.appDate;
       if (rawAppDate) {
-        if (typeof rawAppDate === "string") {
-          appDateString = rawAppDate.slice(0, 10);
-        } else if (rawAppDate instanceof Date) {
-          appDateString = rawAppDate.toISOString().slice(0, 10);
+        const d = new Date(rawAppDate);
+        if (!isNaN(d.getTime())) {
+          appDateString = d.toISOString().split("T")[0]; // "2024-05-02"
         }
       }
       return {
@@ -49,10 +48,8 @@ export async function GET(req: Request) {
         status: "Paid",
       };
     });
-    // ------------------------------------
 
     return NextResponse.json(formatted);
-
   } catch (e: any) {
     console.error("PAYMENT GET error:", e);
     return NextResponse.json({ error: "Server error." }, { status: 500 });
@@ -64,7 +61,7 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // Validation
+    // Validate required fields
     if (!data.appointmentId || !data.customerId || !data.amount || !data.method) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -79,6 +76,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, payment });
+
   } catch (e: any) {
     console.error("PAYMENT POST error:", e);
     return NextResponse.json({ error: "Server error." }, { status: 500 });
