@@ -16,7 +16,77 @@ type ServiceGroup = {
 };
 
 const serviceGroups: ServiceGroup[] = [
-  // ... your serviceGroups code here (unchanged) ...
+  {
+    name: "Hair",
+    description: "Cuts, color, and treatments tailored to your length, texture, and finish.",
+    items: [
+      { name: "Haircut", price: "500/-" },
+      { name: "Blow Dry & Styling", price: "700/-" },
+      { name: "Hair Spa", price: "900/-" },
+      { name: "Root Touch-up", price: "800/-" },
+      { name: "Global Hair Color", price: "1200/-" },
+      { name: "Highlights / Balayage", price: "2500/-"},
+      { name: "Keratin / Smoothening", price: "3500/-"},
+      { name: "Head Massage", price: "300/-" },
+    ],
+  },
+  {
+    name: "Skin",
+    description: "Glow-focused facials and rituals designed for balance, clarity, and radiance.",
+    items: [
+      { name: "Cleanup", price: "300/-" },
+      { name: "Detan", price: "400/-"},
+      { name: "Fruit Facial", price: "600/-" },
+      { name: "Anti-Acne Facial", price: "900/-" },
+      { name: "Anti-Ageing Facial", price: "1100/-" },
+      { name: "Hydra Facial", price: "1500/-" },
+      { name: "Brightening Mask Ritual", price: "750/-" },
+    ],
+  },
+  {
+    name: "Nails",
+    description: "Clean nail care with long-lasting finishes and elegant detailing.",
+    items: [
+      { name: "Manicure", price: "1200/-" },
+      { name: "Pedicure", price: "1400/-"},
+      { name: "Gel Polish", price: "1800/-" },
+      { name: "Nail Extensions", price: "2800/-" },
+      { name: "Nail Art (Basic)", price: "2200/-" },
+      { name: "Nail Art (Premium)", price: "3200/-"},
+      { name: "Nail Repair (per nail)", price: "200/-" },
+    ],
+  },
+  {
+    name: "Waxing",
+    description: "Gentle, hygienic waxing for smooth skin and long-lasting results.",
+    items: [
+      { name: "Underarms", price: "150/-" },
+      { name: "Full Arms", price: "350/-" },
+      { name: "Half Legs", price: "450/-"},
+      { name: "Full Legs", price: "700/-" },
+      { name: "Full Body", price: "1800/-" },
+    ],
+  },
+  {
+    name: "Threading",
+    description: "Precise shaping for a clean, defined look.",
+    items: [
+      { name: "Eyebrows", price: "60/-" },
+      { name: "Upper Lip", price: "40/-" },
+      { name: "Forehead", price: "40/-" },
+      { name: "Full Face", price: "200/-" },
+    ],
+  },
+  {
+    name: "Makeup",
+    description: "Event-ready makeup with a finish that lasts in photos and real life.",
+    items: [
+      { name: "Party Makeup", price: "1800/-" },
+      { name: "Engagement Makeup", price: "3500/-"},
+      { name: "Bridal Makeup", price: "8000/-" },
+      { name: "Saree Draping", price: "800/-" },
+    ],
+  },
 ];
 
 function getInitials(name: string) {
