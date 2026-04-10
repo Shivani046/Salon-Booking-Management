@@ -57,9 +57,9 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const custIdStr = localStorage.getItem("custId"); // DEBUG: always store as string in LS
-    const custId = Number(custIdStr);                 // <-- always number!
-    console.log("Loaded custId from localStorage:", custIdStr, "(as Number:", custId, ")"); // DEBUG
+    const custIdStr = localStorage.getItem("custId");
+    const custId = Number(custIdStr);
+    console.log("Loaded custId from localStorage:", custIdStr, "(as Number:", custId, ")");
 
     if (!loggedIn || !custIdStr || isNaN(custId)) {
       router.push("/login");
@@ -69,25 +69,31 @@ export default function AppointmentsPage() {
     async function fetchAppointments() {
       setLoading(true);
       try {
-        console.log("Fetching for custId (number!):", custId); // DEBUG
         const res = await fetch(`/api/appointments?custId=${custId}`);
         const dbApps: any[] = await res.json();
-        console.log("API returned appointments:", dbApps); // DEBUG
+        console.log("API returned appointments for custId", custId, ":", dbApps);
+
+        // Strict filter: show ONLY this user's appointments (robust if backend ever misbehaves)
+        const onlyMine = dbApps.filter(a =>
+          typeof a.customerId !== "undefined" && Number(a.customerId) === custId
+        );
+        console.log("Filtered for current customer (customerId === custId):", onlyMine);
 
         const now = new Date();
         const upcomingArr: Appointment[] = [];
         const pastArr: Appointment[] = [];
 
-        for (const a of dbApps) {
+        for (const a of onlyMine) {
           if (!a.appDate || !a.appTime) continue;
+          // Parse date and time safely
           const dateTimeString = `${a.appDate}T${a.appTime}`;
           const dt = new Date(dateTimeString);
           if (isNaN(dt.getTime())) continue;
 
-          const staffName = a.staff?.name || "Any staff";
+          const staffName = (a.staff && a.staff.name) ? a.staff.name : "Any staff";
           const base: Appointment = {
             id: a.appId?.toString() || a.id?.toString() || "",
-            service: a.service?.type || "Service",
+            service: a.service?.type || a.serviceType || "Service",
             dateStr: a.appDate,
             timeStr: a.appTime,
             dateLabel: formatDateLabel(a.appDate),
@@ -109,6 +115,8 @@ export default function AppointmentsPage() {
         setUpcoming(upcomingArr.sort((a, b) => a.dateStr.localeCompare(b.dateStr)));
         setPast(pastArr.sort((a, b) => b.dateStr.localeCompare(a.dateStr)));
       } catch (e) {
+        // Helpful error logging
+        console.error("Error getting appointments:", e);
         setUpcoming([]);
         setPast([]);
       }
@@ -129,7 +137,7 @@ export default function AppointmentsPage() {
   function openReschedule(appt: Appointment) {
     setEditDate(appt.dateStr);
     setEditTime(appt.timeStr);
-    setEditStaff(appt.staff || "Any staff");
+    setEditStaff(appt.staff); // always use actual staff value if present
     setModal({ open: true, type: "reschedule", appt });
   }
 
