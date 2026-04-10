@@ -29,19 +29,27 @@ export async function GET(req: Request) {
       }
     });
 
-    // Format for the frontend's Bill type
-    const formatted = payments.map((p) => ({
-      id: `INV-${String(p.id).padStart(4, "0")}`,
-      service: p.appointment?.service?.type ?? "(no service)",
-      date: p.appointment?.appDate
-        ? (typeof p.appointment.appDate === "string"
-            ? p.appointment.appDate.slice(0, 10)
-            : p.appointment.appDate.toISOString().slice(0, 10))
-        : "",
-      method: p.method,
-      amount: `${p.amount}/-`,
-      status: "Paid", // If you add refunds etc. you can change this
-    }));
+    // ------ FIXED DATE FORMATTING -------
+    const formatted = payments.map((p) => {
+      let appDateString = "";
+      const rawAppDate = p.appointment?.appDate;
+      if (rawAppDate) {
+        if (typeof rawAppDate === "string") {
+          appDateString = rawAppDate.slice(0, 10);
+        } else if (rawAppDate instanceof Date) {
+          appDateString = rawAppDate.toISOString().slice(0, 10);
+        }
+      }
+      return {
+        id: `INV-${String(p.id).padStart(4, "0")}`,
+        service: p.appointment?.service?.type ?? "(no service)",
+        date: appDateString,
+        method: p.method,
+        amount: `${p.amount}/-`,
+        status: "Paid",
+      };
+    });
+    // ------------------------------------
 
     return NextResponse.json(formatted);
 
@@ -56,7 +64,7 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // Validation (minimum needed for your schema)
+    // Validation
     if (!data.appointmentId || !data.customerId || !data.amount || !data.method) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -76,4 +84,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-
