@@ -50,7 +50,6 @@ export default function PaymentPage() {
     );
   }
 
-  // Utility: get YYYY-MM-DD into ISO string
   function toDateStringISO(dateStr: string) {
     if (!dateStr) return null;
     const d = new Date(dateStr);
@@ -84,25 +83,22 @@ export default function PaymentPage() {
         return;
       }
 
-      // POST body
-      const payload: any = {
-  custId: Number(custId),       // <--- This is what your backend expects!
-  serviceId,
-  staffId: staffId ?? 1,
-  appDate: toDateStringISO(appointment.date),
-  appTime: appointment.time,
-  amount: Number(appointment.total),
-  status: "UPCOMING",
-  paymentMethod: method,
-};
+      // Step 1: POST to create the Appointment
+      const appointmentPayload: any = {
+        custId: Number(custId),
+        serviceId,
+        staffId: staffId ?? 1,
+        appDate: toDateStringISO(appointment.date),
+        appTime: appointment.time,
+        amount: Number(appointment.total),
+        status: "UPCOMING",
+        paymentMethod: method, // optional for receipts/bookkeeping, but not stored now
+      };
 
-      // 4. Send booking POST
       const res = await fetch("/api/appointments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentPayload),
       });
 
       if (!res.ok) {
@@ -112,6 +108,24 @@ export default function PaymentPage() {
         } catch {
           throw new Error("Failed to save appointment");
         }
+      }
+
+      const apptResult = await res.json();
+      const appointmentId = apptResult?.appointment?.appId; // from backend response
+
+      // Step 2: POST to billing (i.e., add payment)
+      // Only if appointment create worked!
+      if (appointmentId) {
+        await fetch("/api/billing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appointmentId,
+            customerId: Number(custId),
+            method: (method === "Cash at the salon" ? "Cash" : method.replace(" payment", "")), // match your Payment method
+            amount: Number(appointment.total),
+          }),
+        });
       }
 
       // Success: redirect
@@ -133,7 +147,7 @@ export default function PaymentPage() {
     }
   }
 
-  // UI unchanged
+  // UI unchanged (your current design)
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8edd9_0%,#ffffff_55%,#f7ecd8_100%)] text-[#23181a]">
       {/* NAVBAR */}
@@ -142,13 +156,11 @@ export default function PaymentPage() {
           <Link href="/" className="text-lg font-semibold">
             ERAILE BEAUTY
           </Link>
-
           <div className="flex items-center gap-6 text-sm uppercase">
             <Link href="/">Home</Link>
             <Link href="/services">Services</Link>
             <Link href="/book">Book</Link>
             <Link href="/contact">Contact</Link>
-
             {!loggedIn ? (
               <Link href="/login" className="bg-white px-4 py-2 rounded-full text-xs">
                 Login
@@ -164,15 +176,12 @@ export default function PaymentPage() {
           </div>
         </nav>
       </header>
-
       {/* TITLE */}
       <section className="text-center pt-10">
         <h1 className="text-3xl font-semibold">Payment</h1>
       </section>
-
       {/* CONTENT */}
       <section className="max-w-5xl mx-auto px-6 py-8 grid md:grid-cols-2 gap-8">
-
         {/* SUMMARY */}
         <div className="bg-white rounded-xl p-6 shadow">
           <h2 className="font-semibold mb-4">Summary</h2>
@@ -187,13 +196,11 @@ export default function PaymentPage() {
             Total: ₹{appointment.total}
           </p>
         </div>
-
         {/* PAYMENT */}
         <div className="bg-white rounded-xl p-6 shadow">
           <h2 className="text-center font-semibold mb-4">
             Payment Method
           </h2>
-
           <div className="space-y-3">
             {(["Cash at the salon", "UPI", "Card payment"] as PaymentMethod[]).map((m) => (
               <button
@@ -209,7 +216,6 @@ export default function PaymentPage() {
               </button>
             ))}
           </div>
-
           <button
             onClick={onConfirm}
             disabled={loading}
